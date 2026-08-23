@@ -36,6 +36,12 @@ func TestMCPClient_CallTool(t *testing.T) {
 		if r.Header.Get("Content-Type") != "application/json" {
 			t.Errorf("expected Content-Type application/json, got %q", r.Header.Get("Content-Type"))
 		}
+		// STOMPY-1462 cluster 1: streamable-HTTP MCP 406s a request whose
+		// Accept header doesn't offer text/event-stream alongside
+		// application/json.
+		if got := r.Header.Get("Accept"); got != "application/json, text/event-stream" {
+			t.Errorf("expected Accept to offer both application/json and text/event-stream, got %q", got)
+		}
 
 		// Decode request
 		var req jsonRPCRequest

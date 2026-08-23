@@ -2,15 +2,22 @@ package cmd
 
 import (
 	"fmt"
-	"strconv"
 
 	"github.com/banton/stompy-cli/internal/output"
 	"github.com/spf13/cobra"
 )
 
+// bug list/get call the dev-team bug-reports dashboard endpoint, which
+// requires a separate X-API-Key header the CLI has no config surface for
+// (server_hosted's normal Authorization: Bearer flow doesn't satisfy it —
+// see src/api/routes/bug_reports.py::_verify_api_key upstream). Until that's
+// wired up (or the backend accepts the same admin-bearer auth as its other
+// admin routes), these commands will return 401 for every caller — filed as
+// a follow-up to STOMPY-1462 rather than fixed here, since it's a new auth
+// mode, not contract drift.
 var bugCmd = &cobra.Command{
 	Use:   "bug",
-	Short: "View bug reports",
+	Short: "View bug reports (dev team only — requires X-API-Key, not yet supported by this CLI)",
 }
 
 var bugListCmd = &cobra.Command{
@@ -34,7 +41,7 @@ var bugListCmd = &cobra.Command{
 		f := getFormatter()
 		headers := []string{"ID", "TITLE", "STATUS", "SEVERITY", "CREATED"}
 		var rows [][]string
-		for _, b := range resp.BugReports {
+		for _, b := range resp.Reports {
 			statusStr := b.Status
 			severityStr := b.Severity
 			if isTableOutput() {
@@ -42,11 +49,11 @@ var bugListCmd = &cobra.Command{
 				severityStr = output.ColorPriority(b.Severity)
 			}
 			rows = append(rows, []string{
-				fmt.Sprintf("%d", b.ID),
+				b.ID,
 				b.Title,
 				statusStr,
 				severityStr,
-				b.CreatedAt.Local().Format("2006-01-02"),
+				b.CreatedAt,
 			})
 		}
 
@@ -68,23 +75,18 @@ var bugGetCmd = &cobra.Command{
 			return err
 		}
 
-		id, err := strconv.Atoi(args[0])
-		if err != nil {
-			return fmt.Errorf("invalid bug report ID: %s", args[0])
-		}
-
-		resp, err := apiClient.GetBugReport(project, id)
+		resp, err := apiClient.GetBugReport(project, args[0])
 		if err != nil {
 			return err
 		}
 
 		f := getFormatter()
 		fields := []output.KeyValue{
-			{Key: "ID", Value: fmt.Sprintf("%d", resp.ID)},
+			{Key: "ID", Value: resp.ID},
 			{Key: "Title", Value: resp.Title},
 			{Key: "Status", Value: resp.Status},
 			{Key: "Severity", Value: resp.Severity},
-			{Key: "Created", Value: resp.CreatedAt.Local().Format("2006-01-02 15:04:05")},
+			{Key: "Created", Value: resp.CreatedAt},
 		}
 		if resp.Description != "" {
 			fields = append(fields, output.KeyValue{Key: "Description", Value: resp.Description})
@@ -105,7 +107,7 @@ var bugGetCmd = &cobra.Command{
 }
 
 func init() {
-	bugListCmd.Flags().String("status", "", "Filter by status (new, confirmed, in_progress, fixed, wont_fix)")
+	bugListCmd.Flags().String("status", "", "Filter by status (new, triaged, in_progress, resolved, closed, duplicate)")
 	bugListCmd.Flags().Int("limit", 0, "Limit results")
 	bugListCmd.Flags().Int("offset", 0, "Offset for pagination")
 
