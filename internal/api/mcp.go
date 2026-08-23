@@ -116,6 +116,11 @@ func (m *MCPClient) CallTool(toolName string, arguments map[string]any) (string,
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+	// Streamable-HTTP MCP requires the client to accept both; offering only
+	// application/json 406s (STOMPY-1462 cluster 1 — `context explore` and
+	// `context dashboard` failed with "Client must accept both
+	// application/json and text/event-stream").
+	req.Header.Set("Accept", "application/json, text/event-stream")
 	req.Header.Set("User-Agent", m.UserAgent)
 	if m.AuthToken != "" {
 		req.Header.Set("Authorization", "Bearer "+m.AuthToken)
