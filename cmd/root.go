@@ -42,24 +42,7 @@ var rootCmd = &cobra.Command{
 			close(updateAvailable)
 		}()
 
-		// Skip auth setup for commands that don't need it.
-		// Use full command path to avoid matching subcommands with the same name
-		// (e.g. "stompy update" vs "stompy context update").
-		cmdPath := cmd.CommandPath()
-		switch cmdPath {
-		case "stompy login", "stompy logout", "stompy version", "stompy update":
-			return config.Load()
-		}
-		switch cmd.Name() {
-		case "completion", "bash", "zsh", "fish", "powershell":
-			return config.Load()
-		}
-		// Config subcommands don't need API auth
-		if strings.Contains(cmdPath, "config ") {
-			return config.Load()
-		}
-		// Also skip for parent commands (just groupings)
-		if !cmd.HasParent() || (cmd.HasSubCommands() && len(args) == 0) {
+		if !commandNeedsAuth(cmd.CommandPath(), cmd.Name(), cmd.HasParent(), cmd.HasSubCommands() && len(args) == 0) {
 			return config.Load()
 		}
 
@@ -72,14 +55,7 @@ var rootCmd = &cobra.Command{
 			return err
 		}
 
-		apiURL := flagAPIURL
-		if apiURL == "" {
-			if flagUseStaging {
-				apiURL = config.GetStagingAPIURL()
-			} else {
-				apiURL = config.GetAPIURL()
-			}
-		}
+		apiURL := resolveAPIURL()
 
 		apiClient = api.NewClient(apiURL, token, Version, flagVerbose)
 		mcpClient = api.NewMCPClient(api.MCPBaseURL(apiURL), token, Version, flagVerbose)
@@ -120,6 +96,58 @@ func Execute() {
 	}
 }
 
+// commandNeedsAuth reports whether a command needs config + auth resolution
+// before it runs. login/logout/whoami/version/update, shell completion, config
+// subcommands, and parent/grouping commands manage their own auth state (or
+// none at all) and must always reach their own RunE — in particular, whoami
+// has to run even with no stored token so it can report which environment
+// it checked, instead of failing inside PersistentPreRunE with a generic
+// "not authenticated" error that never names an environment.
+//
+// cmdPath is matched in full (not cmd.Name()) to avoid collisions between a
+// top-level command and a subcommand that shares its name (e.g. "stompy
+// update" vs "stompy context update").
+func commandNeedsAuth(cmdPath, cmdName string, hasParent, isParentGrouping bool) bool {
+	switch cmdPath {
+	case "stompy login", "stompy logout", "stompy whoami", "stompy version", "stompy update":
+		return false
+	}
+	switch cmdName {
+	case "completion", "bash", "zsh", "fish", "powershell":
+		return false
+	}
+	if strings.Contains(cmdPath, "config ") {
+		return false
+	}
+	if !hasParent || isParentGrouping {
+		return false
+	}
+	return true
+}
+
+// currentEnvironment returns which backend environment this invocation
+// targets, based on --use-staging. Auth tokens are stored and read scoped to
+// this environment (STOMPY-1703) so a staging session can never collide with
+// a production one, or vice versa.
+func currentEnvironment() config.Environment {
+	if flagUseStaging {
+		return config.EnvStaging
+	}
+	return config.EnvProduction
+}
+
+// resolveAPIURL returns the API base URL for the current invocation:
+// --api-url override, then --use-staging, then the default production URL.
+func resolveAPIURL() string {
+	if flagAPIURL != "" {
+		return flagAPIURL
+	}
+	if flagUseStaging {
+		return config.GetStagingAPIURL()
+	}
+	return config.GetAPIURL()
+}
+
 // resolveAuthToken determines the auth token using precedence:
 // --api-key flag > STOMPY_API_KEY env > OAuth token (with auto-refresh) > api_key from config > error
 func resolveAuthToken() (string, error) {
@@ -133,29 +161,22 @@ func resolveAuthToken() (string, error) {
 		return envKey, nil
 	}
 
-	// 3. OAuth token from config (with auto-refresh)
-	accessToken := config.GetAccessToken()
+	// 3. OAuth token from config (with auto-refresh), scoped to the target environment
+	env := currentEnvironment()
+	accessToken := config.GetAccessToken(env)
 	if accessToken != "" {
-		expiry := config.GetTokenExpiry()
+		expiry := config.GetTokenExpiry(env)
 		if !auth.IsExpired(expiry) {
 			return accessToken, nil
 		}
 
 		// Try to refresh
-		refreshToken := config.GetRefreshToken()
+		refreshToken := config.GetRefreshToken(env)
 		if refreshToken != "" {
-			apiURL := flagAPIURL
-			if apiURL == "" {
-				if flagUseStaging {
-					apiURL = config.GetStagingAPIURL()
-				} else {
-					apiURL = config.GetAPIURL()
-				}
-			}
-			tokenResp, err := auth.RefreshToken(apiURL, refreshToken)
+			tokenResp, err := auth.RefreshToken(resolveAPIURL(), refreshToken)
 			if err == nil {
 				newExpiry := time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second)
-				_ = config.SaveTokens(tokenResp.AccessToken, tokenResp.RefreshToken, newExpiry, config.GetEmail(), "")
+				_ = config.SaveTokens(env, tokenResp.AccessToken, tokenResp.RefreshToken, newExpiry, config.GetEmail(env), "")
 				return tokenResp.AccessToken, nil
 			}
 			// Refresh failed — fall through

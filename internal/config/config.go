@@ -19,6 +19,17 @@ const (
 	defaultOutputFormat = "table"
 )
 
+// Environment identifies which Stompy backend a set of stored credentials
+// belongs to. Credentials are namespaced per environment (auth.<env>.*) so a
+// staging login can never overwrite, or be presented as, a production token
+// (STOMPY-1703).
+type Environment string
+
+const (
+	EnvProduction Environment = "production"
+	EnvStaging    Environment = "staging"
+)
+
 // GetConfigDir returns the path to the stompy config directory (~/.stompy).
 func GetConfigDir() string {
 	home, err := os.UserHomeDir()
@@ -51,7 +62,45 @@ func Load() error {
 		}
 		return fmt.Errorf("reading config: %w", err)
 	}
+
+	if migrateLegacyAuth() {
+		if err := Save(); err != nil {
+			return fmt.Errorf("migrating legacy auth: %w", err)
+		}
+	}
+
 	return nil
+}
+
+// migrateLegacyAuth moves a pre-STOMPY-1703 flat auth.* token — written
+// before credentials were scoped per environment — into auth.production.*.
+// Every login before this fix, flagged --use-staging or not, wrote to this
+// same flat location and (due to a companion bug) always authenticated
+// against production regardless of the flag, so production is the only
+// environment a legacy token can honestly represent; treating it as staging
+// would be presenting it to the wrong host, which is the exact hazard this
+// migration exists to close.
+//
+// The legacy keys are left on disk, untouched, so a downgrade to an older
+// binary still finds a token where it expects one. They are simply never
+// read again by current code. Runs at most once: it no-ops as soon as
+// auth.production.access_token is set, so it never clobbers a real
+// production login made after migration.
+func migrateLegacyAuth() bool {
+	legacyToken := viper.GetString("auth.access_token")
+	if legacyToken == "" {
+		return false
+	}
+	if viper.GetString(authKey(EnvProduction, "access_token")) != "" {
+		return false
+	}
+
+	viper.Set(authKey(EnvProduction, "access_token"), legacyToken)
+	viper.Set(authKey(EnvProduction, "refresh_token"), viper.GetString("auth.refresh_token"))
+	viper.Set(authKey(EnvProduction, "token_expiry"), viper.GetString("auth.token_expiry"))
+	viper.Set(authKey(EnvProduction, "email"), viper.GetString("auth.email"))
+	viper.Set(authKey(EnvProduction, "user_id"), viper.GetString("auth.user_id"))
+	return true
 }
 
 // Save writes the current Viper config to the config file,
@@ -105,29 +154,35 @@ func GetAllSettings() map[string]any {
 	return viper.AllSettings()
 }
 
-// SaveTokens persists auth tokens and user info to the config file.
-func SaveTokens(accessToken, refreshToken string, expiry time.Time, email, userID string) error {
-	viper.Set("auth.access_token", accessToken)
-	viper.Set("auth.refresh_token", refreshToken)
-	viper.Set("auth.token_expiry", expiry.Format(time.RFC3339))
-	viper.Set("auth.email", email)
-	viper.Set("auth.user_id", userID)
+// authKey returns the namespaced viper key for an environment-scoped auth field.
+func authKey(env Environment, field string) string {
+	return fmt.Sprintf("auth.%s.%s", env, field)
+}
+
+// SaveTokens persists auth tokens and user info for the given environment.
+// Credentials for other environments are untouched.
+func SaveTokens(env Environment, accessToken, refreshToken string, expiry time.Time, email, userID string) error {
+	viper.Set(authKey(env, "access_token"), accessToken)
+	viper.Set(authKey(env, "refresh_token"), refreshToken)
+	viper.Set(authKey(env, "token_expiry"), expiry.Format(time.RFC3339))
+	viper.Set(authKey(env, "email"), email)
+	viper.Set(authKey(env, "user_id"), userID)
 	return Save()
 }
 
-// GetAccessToken returns the stored access token.
-func GetAccessToken() string {
-	return viper.GetString("auth.access_token")
+// GetAccessToken returns the stored access token for the given environment.
+func GetAccessToken(env Environment) string {
+	return viper.GetString(authKey(env, "access_token"))
 }
 
-// GetRefreshToken returns the stored refresh token.
-func GetRefreshToken() string {
-	return viper.GetString("auth.refresh_token")
+// GetRefreshToken returns the stored refresh token for the given environment.
+func GetRefreshToken(env Environment) string {
+	return viper.GetString(authKey(env, "refresh_token"))
 }
 
-// GetTokenExpiry returns the stored token expiry time.
-func GetTokenExpiry() time.Time {
-	s := viper.GetString("auth.token_expiry")
+// GetTokenExpiry returns the stored token expiry time for the given environment.
+func GetTokenExpiry(env Environment) time.Time {
+	s := viper.GetString(authKey(env, "token_expiry"))
 	if s == "" {
 		return time.Time{}
 	}
@@ -138,18 +193,19 @@ func GetTokenExpiry() time.Time {
 	return t
 }
 
-// GetEmail returns the stored user email.
-func GetEmail() string {
-	return viper.GetString("auth.email")
+// GetEmail returns the stored user email for the given environment.
+func GetEmail(env Environment) string {
+	return viper.GetString(authKey(env, "email"))
 }
 
-// ClearTokens removes all auth tokens from the config and saves.
-func ClearTokens() error {
-	viper.Set("auth.access_token", "")
-	viper.Set("auth.refresh_token", "")
-	viper.Set("auth.token_expiry", "")
-	viper.Set("auth.email", "")
-	viper.Set("auth.user_id", "")
+// ClearTokens removes the stored auth tokens for the given environment and
+// saves. It does not touch any other environment's credentials.
+func ClearTokens(env Environment) error {
+	viper.Set(authKey(env, "access_token"), "")
+	viper.Set(authKey(env, "refresh_token"), "")
+	viper.Set(authKey(env, "token_expiry"), "")
+	viper.Set(authKey(env, "email"), "")
+	viper.Set(authKey(env, "user_id"), "")
 	return Save()
 }
 

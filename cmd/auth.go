@@ -14,10 +14,8 @@ var loginCmd = &cobra.Command{
 	Use:   "login",
 	Short: "Authenticate via OAuth 2.0 browser-based login (PKCE)",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		apiURL := flagAPIURL
-		if apiURL == "" {
-			apiURL = config.GetAPIURL()
-		}
+		env := currentEnvironment()
+		apiURL := resolveAPIURL()
 
 		tokenResp, err := auth.Login(apiURL)
 		if err != nil {
@@ -25,11 +23,11 @@ var loginCmd = &cobra.Command{
 		}
 
 		expiry := time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second)
-		if err := config.SaveTokens(tokenResp.AccessToken, tokenResp.RefreshToken, expiry, "", ""); err != nil {
+		if err := config.SaveTokens(env, tokenResp.AccessToken, tokenResp.RefreshToken, expiry, "", ""); err != nil {
 			return fmt.Errorf("saving tokens: %w", err)
 		}
 
-		fmt.Println("Login successful! Token saved to", config.GetConfigPath())
+		fmt.Printf("Login successful (%s)! Token saved to %s\n", env, config.GetConfigPath())
 		return nil
 	},
 }
@@ -38,10 +36,11 @@ var logoutCmd = &cobra.Command{
 	Use:   "logout",
 	Short: "Clear stored authentication tokens",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if err := config.ClearTokens(); err != nil {
+		env := currentEnvironment()
+		if err := config.ClearTokens(env); err != nil {
 			return fmt.Errorf("clearing tokens: %w", err)
 		}
-		fmt.Println("Logged out. Tokens cleared.")
+		fmt.Printf("Logged out of %s. Tokens cleared.\n", env)
 		return nil
 	},
 }
@@ -54,32 +53,35 @@ var whoamiCmd = &cobra.Command{
 			return err
 		}
 
+		env := currentEnvironment()
 		f := getFormatter()
 
 		// Check API key first
 		if flagAPIKey != "" || config.GetAPIKey() != "" {
 			fmt.Print(f.FormatSingle([]output.KeyValue{
+				{Key: "Environment", Value: string(env)},
 				{Key: "Auth Method", Value: "API Key"},
 				{Key: "Status", Value: "Authenticated"},
 			}))
 			return nil
 		}
 
-		// Check OAuth tokens
-		token := config.GetAccessToken()
+		// Check OAuth tokens, scoped to the target environment
+		token := config.GetAccessToken(env)
 		if token == "" {
-			fmt.Println("Not authenticated. Run 'stompy login' to authenticate.")
+			fmt.Printf("Not authenticated against %s. Run 'stompy login' to authenticate.\n", env)
 			return nil
 		}
 
-		expiry := config.GetTokenExpiry()
-		email := config.GetEmail()
+		expiry := config.GetTokenExpiry(env)
+		email := config.GetEmail(env)
 		status := "Valid"
 		if auth.IsExpired(expiry) {
 			status = "Expired (will auto-refresh on next command)"
 		}
 
 		fields := []output.KeyValue{
+			{Key: "Environment", Value: string(env)},
 			{Key: "Auth Method", Value: "OAuth 2.0 (PKCE)"},
 			{Key: "Status", Value: status},
 		}

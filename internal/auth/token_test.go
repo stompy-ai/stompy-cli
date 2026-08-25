@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/banton/stompy-cli/internal/config"
 	"github.com/spf13/viper"
 )
 
@@ -118,7 +119,7 @@ func resetViper() {
 func TestGetValidToken_NotLoggedIn(t *testing.T) {
 	resetViper()
 
-	_, err := GetValidToken("https://api.stompy.ai/api/v1")
+	_, err := GetValidToken(config.EnvProduction, "https://api.stompy.ai/api/v1")
 	if err == nil {
 		t.Error("GetValidToken() expected error when not logged in, got nil")
 	}
@@ -126,10 +127,10 @@ func TestGetValidToken_NotLoggedIn(t *testing.T) {
 
 func TestGetValidToken_ValidToken(t *testing.T) {
 	resetViper()
-	viper.Set("auth.access_token", "valid-access-token")
-	viper.Set("auth.token_expiry", time.Now().Add(1*time.Hour).Format(time.RFC3339))
+	viper.Set("auth.production.access_token", "valid-access-token")
+	viper.Set("auth.production.token_expiry", time.Now().Add(1*time.Hour).Format(time.RFC3339))
 
-	token, err := GetValidToken("https://api.stompy.ai/api/v1")
+	token, err := GetValidToken(config.EnvProduction, "https://api.stompy.ai/api/v1")
 	if err != nil {
 		t.Fatalf("GetValidToken() error: %v", err)
 	}
@@ -140,13 +141,37 @@ func TestGetValidToken_ValidToken(t *testing.T) {
 
 func TestGetValidToken_ExpiredNoRefreshToken(t *testing.T) {
 	resetViper()
-	viper.Set("auth.access_token", "expired-token")
-	viper.Set("auth.token_expiry", time.Now().Add(-1*time.Hour).Format(time.RFC3339))
+	viper.Set("auth.production.access_token", "expired-token")
+	viper.Set("auth.production.token_expiry", time.Now().Add(-1*time.Hour).Format(time.RFC3339))
 	// No refresh token set
 
-	_, err := GetValidToken("https://api.stompy.ai/api/v1")
+	_, err := GetValidToken(config.EnvProduction, "https://api.stompy.ai/api/v1")
 	if err == nil {
 		t.Error("GetValidToken() expected error when expired with no refresh token, got nil")
+	}
+}
+
+func TestGetValidToken_DoesNotLeakAcrossEnvironments(t *testing.T) {
+	resetViper()
+	viper.Set("auth.production.access_token", "prod-token")
+	viper.Set("auth.production.token_expiry", time.Now().Add(1*time.Hour).Format(time.RFC3339))
+	viper.Set("auth.staging.access_token", "staging-token")
+	viper.Set("auth.staging.token_expiry", time.Now().Add(1*time.Hour).Format(time.RFC3339))
+
+	prodToken, err := GetValidToken(config.EnvProduction, "https://api.stompy.ai/api/v1")
+	if err != nil {
+		t.Fatalf("GetValidToken(production) error: %v", err)
+	}
+	if prodToken != "prod-token" {
+		t.Errorf("GetValidToken(production) = %q, want %q", prodToken, "prod-token")
+	}
+
+	stagingToken, err := GetValidToken(config.EnvStaging, "https://api-staging.stompy.ai/api/v1")
+	if err != nil {
+		t.Fatalf("GetValidToken(staging) error: %v", err)
+	}
+	if stagingToken != "staging-token" {
+		t.Errorf("GetValidToken(staging) = %q, want %q", stagingToken, "staging-token")
 	}
 }
 
@@ -167,15 +192,15 @@ func TestGetValidToken_RefreshesExpiredToken(t *testing.T) {
 	resetViper()
 	// Isolate HOME so config.Save() doesn't overwrite real config
 	t.Setenv("HOME", t.TempDir())
-	viper.Set("auth.access_token", "expired-token")
-	viper.Set("auth.refresh_token", "old-refresh-token")
-	viper.Set("auth.token_expiry", time.Now().Add(-1*time.Hour).Format(time.RFC3339))
+	viper.Set("auth.production.access_token", "expired-token")
+	viper.Set("auth.production.refresh_token", "old-refresh-token")
+	viper.Set("auth.production.token_expiry", time.Now().Add(-1*time.Hour).Format(time.RFC3339))
 
 	// Use a temp dir for config save so it doesn't touch real config
 	tmpDir := t.TempDir()
 	viper.SetConfigFile(tmpDir + "/config.yaml")
 
-	token, err := GetValidToken(server.URL + "/api/v1")
+	token, err := GetValidToken(config.EnvProduction, server.URL+"/api/v1")
 	if err != nil {
 		t.Fatalf("GetValidToken() error: %v", err)
 	}
@@ -183,8 +208,12 @@ func TestGetValidToken_RefreshesExpiredToken(t *testing.T) {
 		t.Errorf("token = %q, want %q", token, "refreshed-access-token")
 	}
 
-	// Verify the new token was persisted in viper
-	if got := viper.GetString("auth.access_token"); got != "refreshed-access-token" {
+	// Verify the new token was persisted in viper under the production namespace
+	if got := viper.GetString("auth.production.access_token"); got != "refreshed-access-token" {
 		t.Errorf("persisted access_token = %q, want %q", got, "refreshed-access-token")
+	}
+	// ...and did not leak into staging's namespace
+	if got := viper.GetString("auth.staging.access_token"); got != "" {
+		t.Errorf("refresh leaked into staging namespace: access_token = %q, want empty", got)
 	}
 }
