@@ -19,26 +19,26 @@ Stompy is a persistent memory and knowledge management platform for AI-assisted 
 
 ```bash
 # macOS (Apple Silicon)
-curl -sL https://github.com/banton/stompy-cli/releases/latest/download/stompy_$(curl -sI https://github.com/banton/stompy-cli/releases/latest | grep -i location | sed 's/.*tag\/v//' | tr -d '\r')_darwin_arm64.tar.gz | tar xz
+curl -sL https://github.com/stompy-ai/stompy-cli/releases/latest/download/stompy_$(curl -sI https://github.com/stompy-ai/stompy-cli/releases/latest | grep -i location | sed 's/.*tag\/v//' | tr -d '\r')_darwin_arm64.tar.gz | tar xz
 sudo mv stompy /usr/local/bin/
 
 # macOS (Intel)
-curl -sL https://github.com/banton/stompy-cli/releases/latest/download/stompy_$(curl -sI https://github.com/banton/stompy-cli/releases/latest | grep -i location | sed 's/.*tag\/v//' | tr -d '\r')_darwin_amd64.tar.gz | tar xz
+curl -sL https://github.com/stompy-ai/stompy-cli/releases/latest/download/stompy_$(curl -sI https://github.com/stompy-ai/stompy-cli/releases/latest | grep -i location | sed 's/.*tag\/v//' | tr -d '\r')_darwin_amd64.tar.gz | tar xz
 sudo mv stompy /usr/local/bin/
 
 # Linux (amd64)
-curl -sL https://github.com/banton/stompy-cli/releases/latest/download/stompy_$(curl -sI https://github.com/banton/stompy-cli/releases/latest | grep -i location | sed 's/.*tag\/v//' | tr -d '\r')_linux_amd64.tar.gz | tar xz
+curl -sL https://github.com/stompy-ai/stompy-cli/releases/latest/download/stompy_$(curl -sI https://github.com/stompy-ai/stompy-cli/releases/latest | grep -i location | sed 's/.*tag\/v//' | tr -d '\r')_linux_amd64.tar.gz | tar xz
 sudo mv stompy /usr/local/bin/
 ```
 
-Or download manually from the [Releases](https://github.com/banton/stompy-cli/releases) page.
+Or download manually from the [Releases](https://github.com/stompy-ai/stompy-cli/releases) page.
 
 ### Build from Source
 
 Requires Go 1.21+:
 
 ```bash
-git clone https://github.com/banton/stompy-cli.git
+git clone https://github.com/stompy-ai/stompy-cli.git
 cd stompy-cli
 make build      # → bin/stompy
 make install    # → $GOPATH/bin/stompy
