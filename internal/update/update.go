@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	githubRepo    = "banton/stompy-cli"
+	githubRepo    = "stompy-ai/stompy-cli"
 	releaseAPI    = "https://api.github.com/repos/" + githubRepo + "/releases/latest"
 	checkInterval = 24 * time.Hour
 	cacheFileName = ".version-check"
