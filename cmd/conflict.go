@@ -14,6 +14,27 @@ var conflictCmd = &cobra.Command{
 	Short: "Manage conflicts between contexts",
 }
 
+// validConflictStatuses is the server's actual conflict-status vocabulary
+// since the 1767 A-train (STOMPY-1814 — the CLI's old documented
+// vocabulary, unresolved/resolved/dismissed, had drifted from this and
+// silently matched zero rows instead of erroring).
+var validConflictStatuses = map[string]bool{
+	"pending":       true,
+	"user_resolved": true,
+	"auto_resolved": true,
+	"dismissed":     true,
+}
+
+func validateConflictStatus(status string) error {
+	if status == "" || validConflictStatuses[strings.ToLower(status)] {
+		return nil
+	}
+	return fmt.Errorf(
+		"invalid status %q: must be one of pending, user_resolved, auto_resolved, dismissed",
+		status,
+	)
+}
+
 var conflictListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List detected conflicts",
@@ -26,6 +47,10 @@ var conflictListCmd = &cobra.Command{
 		status, _ := cmd.Flags().GetString("status")
 		limit, _ := cmd.Flags().GetInt("limit")
 		offset, _ := cmd.Flags().GetInt("offset")
+
+		if err := validateConflictStatus(status); err != nil {
+			return err
+		}
 
 		resp, err := apiClient.ListConflicts(project, status, limit, offset)
 		if err != nil {
