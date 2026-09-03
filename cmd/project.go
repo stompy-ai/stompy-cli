@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/banton/stompy-cli/internal/api"
@@ -193,6 +194,11 @@ var projectBriefCmd = &cobra.Command{
 
 		var resp ProjectBriefResponse
 		if err := mcpClient.CallToolTyped("project_brief", mcpArgs, &resp); err != nil {
+			var raw *api.NonJSONToolResult
+			if errors.As(err, &raw) {
+				fmt.Println(raw.Text) // server-rendered text (STOMPY-1921)
+				return nil
+			}
 			return err
 		}
 

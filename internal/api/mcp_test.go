@@ -2,8 +2,10 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 )
 
@@ -160,5 +162,78 @@ func TestMCPClient_RPCError(t *testing.T) {
 	_, err := client.CallTool("nonexistent", nil)
 	if err == nil {
 		t.Fatal("expected error, got nil")
+	}
+}
+
+// STOMPY-1921: streamable-HTTP servers answer tools/call as an SSE stream
+// when the client accepts text/event-stream (which STOMPY-1462 made us do).
+// The JSON-RPC message rides inside a `data:` line; the client must read it.
+func TestMCPClient_CallTool_SSEResponse(t *testing.T) {
+	body := "event: message\r\ndata: {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"hello from sse\"}],\"isError\":false}}\r\n\r\n"
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.Header.Get("Accept"); !strings.Contains(got, "text/event-stream") {
+			t.Errorf("Accept header must include text/event-stream, got %q", got)
+		}
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(body))
+	}))
+	defer srv.Close()
+
+	c := NewMCPClient(srv.URL, "tok", "test", false)
+	text, err := c.CallTool("project_brief", map[string]any{"project": "x"})
+	if err != nil {
+		t.Fatalf("CallTool over SSE: %v", err)
+	}
+	if text != "hello from sse" {
+		t.Fatalf("got %q", text)
+	}
+}
+
+func TestMCPClient_CallTool_SSEMultiFrame(t *testing.T) {
+	// A ping/notification frame before the response frame must be skipped;
+	// the frame whose id matches the request is the answer.
+	body := "event: message\ndata: {\"jsonrpc\":\"2.0\",\"method\":\"notifications/progress\",\"params\":{}}\n\nevent: message\ndata: {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"second frame\"}],\"isError\":false}}\n\n"
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/event-stream; charset=utf-8")
+		_, _ = w.Write([]byte(body))
+	}))
+	defer srv.Close()
+	c := NewMCPClient(srv.URL, "tok", "test", false)
+	text, err := c.CallTool("project_brief", map[string]any{})
+	if err != nil {
+		t.Fatalf("CallTool over multi-frame SSE: %v", err)
+	}
+	if text != "second frame" {
+		t.Fatalf("got %q", text)
+	}
+}
+
+func TestStripRecap(t *testing.T) {
+	in := "📋 Stompy recap — p (stored data)\n\n⚑ Critical rules (1) — …\n\n---\n\nproject: p\nnarrative: hi"
+	if got := stripRecap(in); got != "project: p\nnarrative: hi" {
+		t.Fatalf("got %q", got)
+	}
+	if got := stripRecap("project: p"); got != "project: p" {
+		t.Fatalf("non-recap text must pass through, got %q", got)
+	}
+}
+
+func TestMCPClient_CallToolTyped_TOONTextIsTypedError(t *testing.T) {
+	body := "{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{\"content\":[{\"type\":\"text\",\"text\":\"📋 Stompy recap — p (stored data)\\n\\n---\\n\\nproject: p\\nnarrative: hi\"}],\"isError\":false}}"
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(body))
+	}))
+	defer srv.Close()
+	c := NewMCPClient(srv.URL, "tok", "test", false)
+	var dest struct{ Project string }
+	err := c.CallToolTyped("project_brief", map[string]any{}, &dest)
+	var raw *NonJSONToolResult
+	if !errors.As(err, &raw) {
+		t.Fatalf("expected NonJSONToolResult, got %v", err)
+	}
+	if raw.Text != "project: p\nnarrative: hi" || raw.Tool != "project_brief" {
+		t.Fatalf("got %+v", raw)
 	}
 }
