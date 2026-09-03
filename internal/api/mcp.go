@@ -155,8 +155,20 @@ func (m *MCPClient) CallTool(toolName string, arguments map[string]any) (string,
 		}
 	}
 
+	// STOMPY-1921: a streamable-HTTP server answers tools/call as an SSE
+	// stream when the client accepts text/event-stream (which STOMPY-1462
+	// made us do). The JSON-RPC message rides inside `data:` lines; a
+	// notification frame may precede it. Plain JSON bodies still work.
+	payload := respBytes
+	if isSSE(resp.Header.Get("Content-Type"), respBytes) {
+		payload, err = sseResponsePayload(respBytes, 1)
+		if err != nil {
+			return "", fmt.Errorf("decoding MCP SSE response: %w", err)
+		}
+	}
+
 	var rpcResp jsonRPCResponse
-	if err := json.Unmarshal(respBytes, &rpcResp); err != nil {
+	if err := json.Unmarshal(payload, &rpcResp); err != nil {
 		return "", fmt.Errorf("decoding MCP response: %w", err)
 	}
 
@@ -184,7 +196,32 @@ func (m *MCPClient) CallTool(toolName string, arguments map[string]any) (string,
 		}
 	}
 
-	return strings.Join(texts, "\n"), nil
+	return stripRecap(strings.Join(texts, "\n")), nil
+}
+
+// NonJSONToolResult is returned by CallToolTyped when the server answered
+// with human-readable text (the 6.6.x TOON rendering) instead of JSON.
+// Callers print Text as-is — it is the same rendering an MCP client sees.
+type NonJSONToolResult struct {
+	Tool string
+	Text string
+}
+
+func (e *NonJSONToolResult) Error() string {
+	return fmt.Sprintf("tool %s returned text, not JSON", e.Tool)
+}
+
+// stripRecap drops the session recap block the server prepends to the first
+// tool result of a session ("📋 Stompy recap — …\n\n---\n\n<result>"), so
+// typed decoding and raw printing both see only the tool's own output.
+func stripRecap(text string) string {
+	if !strings.HasPrefix(strings.TrimSpace(text), "📋 Stompy recap") {
+		return text
+	}
+	if i := strings.Index(text, "\n---\n"); i >= 0 {
+		return strings.TrimLeft(text[i+len("\n---\n"):], "\n")
+	}
+	return text
 }
 
 // CallToolTyped calls a tool and unmarshals the JSON text response into dest.
@@ -194,7 +231,63 @@ func (m *MCPClient) CallToolTyped(toolName string, arguments map[string]any, des
 		return err
 	}
 	if err := json.Unmarshal([]byte(text), dest); err != nil {
+		if strings.TrimSpace(text) != "" && !strings.HasPrefix(strings.TrimSpace(text), "{") {
+			// STOMPY-1921: since 6.6.13 tools render TOON text, not JSON.
+			// Hand the text back so the command can print it verbatim.
+			return &NonJSONToolResult{Tool: toolName, Text: text}
+		}
 		return fmt.Errorf("decoding tool response as JSON: %w (raw: %.200s)", err, text)
 	}
 	return nil
+}
+
+// isSSE reports whether the MCP response is a text/event-stream body.
+func isSSE(contentType string, body []byte) bool {
+	if strings.HasPrefix(strings.ToLower(contentType), "text/event-stream") {
+		return true
+	}
+	trimmed := bytes.TrimLeft(body, " \r\n\t")
+	return bytes.HasPrefix(trimmed, []byte("event:")) || bytes.HasPrefix(trimmed, []byte("data:"))
+}
+
+// sseResponsePayload extracts the JSON-RPC response for `wantID` from an SSE
+// body: frames are separated by blank lines, each frame's `data:` lines join
+// to one JSON document. Frames without a matching id (notifications, pings)
+// are skipped; when no frame carries the id, the last frame with a result or
+// error is returned so a server that omits ids still parses.
+func sseResponsePayload(body []byte, wantID int) ([]byte, error) {
+	text := strings.ReplaceAll(string(body), "\r\n", "\n")
+	var fallback []byte
+	for _, frame := range strings.Split(text, "\n\n") {
+		var data []string
+		for _, line := range strings.Split(frame, "\n") {
+			if strings.HasPrefix(line, "data:") {
+				data = append(data, strings.TrimPrefix(strings.TrimPrefix(line, "data:"), " "))
+			}
+		}
+		if len(data) == 0 {
+			continue
+		}
+		doc := []byte(strings.Join(data, "\n"))
+		var probe struct {
+			ID     *json.Number    `json:"id"`
+			Result json.RawMessage `json:"result"`
+			Error  json.RawMessage `json:"error"`
+		}
+		if err := json.Unmarshal(doc, &probe); err != nil {
+			continue
+		}
+		if probe.ID != nil {
+			if id, err := probe.ID.Int64(); err == nil && int(id) == wantID {
+				return doc, nil
+			}
+		}
+		if len(probe.Result) > 0 || len(probe.Error) > 0 {
+			fallback = doc
+		}
+	}
+	if fallback != nil {
+		return fallback, nil
+	}
+	return nil, fmt.Errorf("no JSON-RPC response frame in SSE body (%d bytes)", len(body))
 }
