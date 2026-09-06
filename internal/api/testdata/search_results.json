@@ -1,0 +1,31 @@
+{
+  "results": [
+    {
+      "id": 1,
+      "label": "kafka_notes",
+      "content": "We use Kafka for event streaming between services.",
+      "preview": "We use Kafka for event streaming between services.",
+      "metadata": "{\"tags\": [\"messaging\", \"infra\"], \"priority\": \"important\", \"keywords\": [], \"created_at\": \"2026-09-06T16:58:39.760753\"}",
+      "similarity": null,
+      "bm25_score": 0.1,
+      "rrf_score": 0.0164,
+      "rerank_score": null,
+      "temporal_score": null,
+      "source": "bm25",
+      "is_chunk": false,
+      "chunk_id": null,
+      "parent_chunk_id": null,
+      "scope": "project"
+    }
+  ],
+  "total_found": 1,
+  "vector_count": 0,
+  "bm25_count": 1,
+  "overlap_count": 0,
+  "search_mode": "bm25_only",
+  "reranked": false,
+  "rerank_model": null,
+  "tokens_used": 0,
+  "contexts_included": 0,
+  "contexts_skipped": 0
+}
