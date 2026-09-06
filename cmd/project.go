@@ -139,6 +139,15 @@ var projectDeleteCmd = &cobra.Command{
 			return err
 		}
 
+		// DeleteProject returns 204 No Content — there is no API object to
+		// pass through, so -o json gets a locally-built confirmation object
+		// instead (STOMPY-1967 item 1).
+		if !isTableOutput() {
+			f := getFormatter()
+			fmt.Print(f.FormatRaw(map[string]string{"name": args[0], "status": "deleted"}))
+			return nil
+		}
+
 		fmt.Printf("Project %q deleted.\n", args[0])
 		return nil
 	},

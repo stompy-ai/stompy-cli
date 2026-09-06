@@ -91,6 +91,12 @@ var contextLockCmd = &cobra.Command{
 			return err
 		}
 
+		if !isTableOutput() {
+			f := getFormatter()
+			fmt.Print(f.FormatRaw(resp))
+			return nil
+		}
+
 		fmt.Printf("%s Context locked: %s (version %s)\n", output.Success("✓"), output.Teal(resp.Topic), resp.Version)
 		return nil
 	},
@@ -165,6 +171,12 @@ var contextUnlockCmd = &cobra.Command{
 		resp, err := apiClient.UnlockContext(project, topic, version, force, noArchive)
 		if err != nil {
 			return err
+		}
+
+		if !isTableOutput() {
+			f := getFormatter()
+			fmt.Print(f.FormatRaw(resp))
+			return nil
 		}
 
 		archivedStr := ""

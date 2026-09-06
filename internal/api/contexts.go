@@ -46,16 +46,26 @@ type VersionSummary struct {
 	CreatedAt *time.Time `json:"created_at,omitempty"`
 }
 
+// ContextCreateResponse decodes POST /projects/{name}/contexts (context lock).
+// STOMPY-1967 item 1: the live route has no "status" field — it returns
+// id/topic/version plus a dashboard url — so -o json has an object worth
+// printing.
 type ContextCreateResponse struct {
-	Status  string `json:"status"`
+	ID      int    `json:"id"`
 	Topic   string `json:"topic"`
 	Version string `json:"version"`
+	URL     string `json:"url,omitempty"`
 }
 
+// ContextDeleteResponse decodes DELETE /projects/{name}/contexts/{topic}
+// (context unlock). STOMPY-1967 item 1: the live route answers
+// deleted_count/versions_deleted, not "status", plus a dashboard url.
 type ContextDeleteResponse struct {
-	Status   string `json:"status"`
-	Topic    string `json:"topic"`
-	Archived bool   `json:"archived"`
+	Topic           string   `json:"topic"`
+	Archived        bool     `json:"archived"`
+	DeletedCount    int      `json:"deleted_count,omitempty"`
+	VersionsDeleted []string `json:"versions_deleted,omitempty"`
+	URL             string   `json:"url,omitempty"`
 }
 
 type ContextMoveResponse struct {

@@ -33,9 +33,9 @@ var fileUploadCmd = &cobra.Command{
 		f := getFormatter()
 		fmt.Print(f.FormatSingle([]output.KeyValue{
 			{Key: "ID", Value: fmt.Sprintf("%d", resp.ID)},
-			{Key: "Filename", Value: resp.Filename},
-			{Key: "Size", Value: formatBytes(resp.SizeBytes)},
-			{Key: "Created", Value: resp.CreatedAt.Local().Format("2006-01-02 15:04:05")},
+			{Key: "Title", Value: resp.Title},
+			{Key: "Size", Value: formatBytes(resp.Metadata.SizeBytes)},
+			{Key: "Status", Value: resp.ProcessingStatus},
 		}))
 		return nil
 	},
@@ -60,15 +60,16 @@ var fileListCmd = &cobra.Command{
 		}
 
 		f := getFormatter()
-		headers := []string{"ID", "FILENAME", "LABEL", "SIZE", "CREATED"}
+		headers := []string{"ID", "TITLE", "TYPE", "STATUS", "SIZE", "UPLOADED"}
 		var rows [][]string
-		for _, file := range resp.Files {
+		for _, file := range resp.Documents {
 			rows = append(rows, []string{
 				fmt.Sprintf("%d", file.ID),
-				file.Filename,
-				file.Label,
+				file.Title,
+				file.FileType,
+				file.ProcessingStatus,
 				formatBytes(file.SizeBytes),
-				file.CreatedAt.Local().Format("2006-01-02"),
+				file.UploadedAt.Local().Format("2006-01-02"),
 			})
 		}
 
@@ -103,11 +104,15 @@ var fileGetCmd = &cobra.Command{
 		f := getFormatter()
 		fields := []output.KeyValue{
 			{Key: "ID", Value: fmt.Sprintf("%d", resp.ID)},
-			{Key: "Filename", Value: resp.Filename},
-			{Key: "Label", Value: resp.Label},
+			{Key: "Title", Value: resp.Title},
+			{Key: "Type", Value: resp.FileType},
 			{Key: "MIME Type", Value: resp.MimeType},
 			{Key: "Size", Value: formatBytes(resp.SizeBytes)},
-			{Key: "Created", Value: resp.CreatedAt.Local().Format("2006-01-02 15:04:05")},
+			{Key: "Status", Value: resp.ProcessingStatus},
+			{Key: "Uploaded", Value: resp.UploadedAt.Local().Format("2006-01-02 15:04:05")},
+		}
+		if resp.AIDescription != nil && *resp.AIDescription != "" {
+			fields = append(fields, output.KeyValue{Key: "AI Description", Value: *resp.AIDescription})
 		}
 
 		fmt.Print(f.FormatSingle(fields))

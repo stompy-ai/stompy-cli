@@ -1,0 +1,23 @@
+{
+  "documents": [
+    {
+      "id": 1,
+      "title": "dogfood_notes.txt",
+      "file_type": "txt",
+      "mime_type": ".txt",
+      "s3_url": "https://sfo3.digitaloceanspaces.com/stompy-stg-master/dogfood_cli_1967/2026/09/06/d5142d0a_dogfood_notes.txt?X-Amz-Signature=REDACTED",
+      "size_bytes": 25,
+      "metadata": {
+        "tags": null,
+        "priority": "reference",
+        "uploaded_by": "auth0|6926009b2f196223d507247a"
+      },
+      "processing_status": "complete",
+      "uploaded_at": "2026-09-06T16:41:00.668517Z",
+      "ai_description": null
+    }
+  ],
+  "total": 1,
+  "limit": 50,
+  "offset": 0
+}
