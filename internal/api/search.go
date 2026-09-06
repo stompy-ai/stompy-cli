@@ -26,7 +26,7 @@ type SearchResponse struct {
 // Search performs hybrid semantic + keyword search across a project.
 func (c *Client) Search(project, query string, limit int) (*SearchResponse, error) {
 	params := url.Values{}
-	params.Set("q", query)
+	params.Set("query", query)
 	if limit > 0 {
 		params.Set("limit", strconv.Itoa(limit))
 	}

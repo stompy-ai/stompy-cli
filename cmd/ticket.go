@@ -59,6 +59,12 @@ var ticketCreateCmd = &cobra.Command{
 			return err
 		}
 
+		if !isTableOutput() {
+			f := getFormatter()
+			fmt.Print(f.FormatRaw(resp))
+			return nil
+		}
+
 		fmt.Printf("%s Ticket #%d created: %s\n", output.Success("✓"), resp.ID, resp.Title)
 		return nil
 	},
@@ -163,6 +169,12 @@ var ticketUpdateCmd = &cobra.Command{
 		resp, err := apiClient.UpdateTicket(project, id, req)
 		if err != nil {
 			return err
+		}
+
+		if !isTableOutput() {
+			f := getFormatter()
+			fmt.Print(f.FormatRaw(resp))
+			return nil
 		}
 
 		fmt.Printf("%s Ticket #%d updated: %s\n", output.Success("✓"), resp.ID, resp.Title)

@@ -14,20 +14,51 @@ import (
 	"time"
 )
 
-// FileResponse represents an uploaded file/document.
+// FileResponse represents an uploaded file/document as returned by
+// GET /projects/{name}/files (list items) and GET /projects/{name}/files/{id}.
+// STOMPY-1967 item 7: the route answers `documents`/`title`/`size_bytes`, not
+// the `files`/`filename`/`size` shape this used to decode.
 type FileResponse struct {
-	ID        int       `json:"id"`
-	Filename  string    `json:"filename"`
-	Label     string    `json:"label,omitempty"`
-	MimeType  string    `json:"mime_type,omitempty"`
-	SizeBytes int       `json:"size_bytes"`
-	CreatedAt time.Time `json:"created_at"`
+	ID               int       `json:"id"`
+	Title            string    `json:"title"`
+	FileType         string    `json:"file_type,omitempty"`
+	MimeType         string    `json:"mime_type,omitempty"`
+	S3URL            string    `json:"s3_url,omitempty"`
+	SizeBytes        int       `json:"size_bytes"`
+	ProcessingStatus string    `json:"processing_status,omitempty"`
+	UploadedAt       time.Time `json:"uploaded_at,omitempty"`
+	AIDescription    *string   `json:"ai_description,omitempty"`
 }
 
-// FileListResponse wraps a list of files.
+// FileListResponse wraps a list of files (documents) for a project.
 type FileListResponse struct {
-	Files []FileResponse `json:"files"`
-	Total int            `json:"total"`
+	Documents []FileResponse `json:"documents"`
+	Total     int            `json:"total"`
+	Limit     int            `json:"limit,omitempty"`
+	Offset    int            `json:"offset,omitempty"`
+}
+
+// FileMetadata is the nested metadata object the upload endpoint returns —
+// size and type live here, not at the top level, unlike the list/get shape.
+type FileMetadata struct {
+	FileType  string `json:"file_type,omitempty"`
+	SizeBytes int    `json:"size_bytes"`
+	Priority  string `json:"priority,omitempty"`
+}
+
+// FileUploadResponse decodes POST /projects/{name}/files. Distinct from
+// FileResponse: size/type are nested in `metadata`, the timestamp key is
+// `created_at` (not `uploaded_at`), and there's a `message` field.
+type FileUploadResponse struct {
+	ID               int          `json:"id"`
+	Title            string       `json:"title"`
+	CreatedAt        time.Time    `json:"created_at"`
+	Metadata         FileMetadata `json:"metadata"`
+	S3URL            string       `json:"s3_url,omitempty"`
+	ProcessingStatus string       `json:"processing_status,omitempty"`
+	ContextID        *int         `json:"context_id,omitempty"`
+	AIDescription    *string      `json:"ai_description,omitempty"`
+	Message          string       `json:"message,omitempty"`
 }
 
 // ListFiles fetches files for a project with optional search.
@@ -60,7 +91,7 @@ func (c *Client) GetFile(project string, id int) (*FileResponse, error) {
 }
 
 // UploadFile uploads a file with multipart form data.
-func (c *Client) UploadFile(project, filePath, label string) (*FileResponse, error) {
+func (c *Client) UploadFile(project, filePath, label string) (*FileUploadResponse, error) {
 	f, err := os.Open(filePath)
 	if err != nil {
 		return nil, fmt.Errorf("opening file: %w", err)
@@ -78,17 +109,15 @@ func (c *Client) UploadFile(project, filePath, label string) (*FileResponse, err
 		return nil, fmt.Errorf("copying file data: %w", err)
 	}
 
-	if label != "" {
-		if err := writer.WriteField("label", label); err != nil {
-			return nil, fmt.Errorf("writing label field: %w", err)
-		}
-	}
-
 	if err := writer.Close(); err != nil {
 		return nil, fmt.Errorf("closing multipart writer: %w", err)
 	}
 
 	u := c.BaseURL + fmt.Sprintf("/projects/%s/files", project)
+	if label != "" {
+		// The route reads `label` as a query parameter, not a form field.
+		u += "?" + url.Values{"label": {label}}.Encode()
+	}
 
 	if c.Verbose {
 		fmt.Fprintf(os.Stderr, "[DEBUG] --> POST %s (multipart, file: %s)\n", u, filePath)
@@ -130,7 +159,7 @@ func (c *Client) UploadFile(project, filePath, label string) (*FileResponse, err
 		return nil, apiErr
 	}
 
-	var fileResp FileResponse
+	var fileResp FileUploadResponse
 	if err := json.Unmarshal(respBody, &fileResp); err != nil {
 		return nil, fmt.Errorf("decoding upload response: %w", err)
 	}
