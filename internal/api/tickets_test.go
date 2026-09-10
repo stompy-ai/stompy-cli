@@ -5,9 +5,13 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 )
 
+// STOMPY-1967 item 6: GET /projects/{name}/tickets answers the kanban BOARD
+// shape ({"columns":[{"status","count","tickets":[...]}],"total":N}), not a
+// flat {"tickets":[...]}. ListTickets must flatten columns -> a ticket list.
 func TestListTickets(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
@@ -19,12 +23,9 @@ func TestListTickets(t *testing.T) {
 		if r.URL.Query().Get("status") != "open" {
 			t.Errorf("status = %q, want open", r.URL.Query().Get("status"))
 		}
-		json.NewEncoder(w).Encode(TicketListResponse{
-			Tickets: []TicketResponse{
-				{ID: 1, Title: "Fix bug", Type: "bug", Status: "open", Priority: "high"},
-			},
-			Total: 1,
-		})
+		w.Write([]byte(`{"columns":[{"status":"open","count":1,"tickets":[` +
+			`{"id":1,"title":"Fix bug","type":"bug","status":"open","priority":"high"}` +
+			`]}],"total":1}`))
 	}))
 	defer srv.Close()
 
@@ -36,8 +37,52 @@ func TestListTickets(t *testing.T) {
 	if resp.Total != 1 {
 		t.Errorf("Total = %d, want 1", resp.Total)
 	}
+	if len(resp.Tickets) != 1 {
+		t.Fatalf("len(Tickets) = %d, want 1 (columns were not flattened)", len(resp.Tickets))
+	}
 	if resp.Tickets[0].Title != "Fix bug" {
 		t.Errorf("Title = %q, want %q", resp.Tickets[0].Title, "Fix bug")
+	}
+}
+
+// TestListTickets_LiveBoardFixture decodes a RECORDED live response
+// (staging 2026-09-06, identity user 51, project dogfood_cli_1967) to guard
+// against the next route reshape going unnoticed.
+func TestListTickets_LiveBoardFixture(t *testing.T) {
+	body, err := os.ReadFile("testdata/ticket_list_board.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	var resp TicketListResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		t.Fatalf("Unmarshal() error: %v", err)
+	}
+	if resp.Total != 1 {
+		t.Errorf("Total = %d, want 1", resp.Total)
+	}
+	if len(resp.Tickets) != 1 {
+		t.Fatalf("len(Tickets) = %d, want 1", len(resp.Tickets))
+	}
+	got := resp.Tickets[0]
+	if got.ID != 1 || got.Title != "test ticket for 1967" || got.Status != "backlog" {
+		t.Errorf("Tickets[0] = %+v, want id=1 title=%q status=backlog", got, "test ticket for 1967")
+	}
+	if got.URL == "" {
+		t.Error("expected URL to be populated from the live fixture")
+	}
+}
+
+// TestListTickets_FlatShapeFallback: /tickets/search answers a flat
+// {"tickets":[...]} shape (no columns) — TicketListResponse stays reusable
+// for that case too.
+func TestListTickets_FlatShapeFallback(t *testing.T) {
+	body := []byte(`{"tickets":[{"id":9,"title":"Flat","type":"task","status":"done","priority":"low"}],"total":1}`)
+	var resp TicketListResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		t.Fatalf("Unmarshal() error: %v", err)
+	}
+	if len(resp.Tickets) != 1 || resp.Tickets[0].Title != "Flat" {
+		t.Errorf("Tickets = %+v, want one ticket titled Flat", resp.Tickets)
 	}
 }
 

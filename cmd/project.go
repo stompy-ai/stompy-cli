@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/banton/stompy-cli/internal/api"
@@ -138,6 +139,15 @@ var projectDeleteCmd = &cobra.Command{
 			return err
 		}
 
+		// DeleteProject returns 204 No Content — there is no API object to
+		// pass through, so -o json gets a locally-built confirmation object
+		// instead (STOMPY-1967 item 1).
+		if !isTableOutput() {
+			f := getFormatter()
+			fmt.Print(f.FormatRaw(map[string]string{"name": args[0], "status": "deleted"}))
+			return nil
+		}
+
 		fmt.Printf("Project %q deleted.\n", args[0])
 		return nil
 	},
@@ -193,6 +203,11 @@ var projectBriefCmd = &cobra.Command{
 
 		var resp ProjectBriefResponse
 		if err := mcpClient.CallToolTyped("project_brief", mcpArgs, &resp); err != nil {
+			var raw *api.NonJSONToolResult
+			if errors.As(err, &raw) {
+				fmt.Println(raw.Text) // server-rendered text (STOMPY-1921)
+				return nil
+			}
 			return err
 		}
 

@@ -26,29 +26,31 @@ var searchCmd = &cobra.Command{
 		}
 
 		f := getFormatter()
-		headers := []string{"ID", "TYPE", "TOPIC", "PREVIEW", "SCORE"}
+		headers := []string{"ID", "LABEL", "PRIORITY", "PREVIEW", "SCORE", "SOURCE", "SCOPE"}
 		var rows [][]string
 		for _, r := range resp.Results {
 			preview := r.Preview
 			if len(preview) > 60 {
 				preview = preview[:57] + "..."
 			}
-			typeStr := r.Type
-			if isTableOutput() {
-				typeStr = output.ColorType(r.Type)
+			priority := r.DecodedMetadata().Priority
+			if isTableOutput() && priority != "" {
+				priority = output.ColorPriority(priority)
 			}
 			rows = append(rows, []string{
 				fmt.Sprintf("%d", r.ID),
-				typeStr,
-				r.Topic,
+				r.Label,
+				priority,
 				preview,
-				fmt.Sprintf("%.2f", r.Score),
+				fmt.Sprintf("%.4f", r.RankScore()),
+				r.Source,
+				r.Scope,
 			})
 		}
 
 		fmt.Print(f.FormatTable(headers, rows))
 		if isTableOutput() {
-			fmt.Printf("\nFound: %d results for %q\n", resp.Total, resp.Query)
+			fmt.Printf("\nFound: %d results for %q\n", resp.TotalFound, args[0])
 		}
 		return nil
 	},

@@ -103,7 +103,7 @@ func TestLockContext(t *testing.T) {
 		json.Unmarshal(body, &gotBody)
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(ContextCreateResponse{
-			Status: "locked", Topic: gotBody.Topic, Version: "1.0",
+			ID: 7, Topic: gotBody.Topic, Version: "1.0", URL: "https://stompy.ai/dashboard/projects/myproj/contexts/new_ctx@1.0",
 		})
 	}))
 	defer srv.Close()
@@ -117,8 +117,11 @@ func TestLockContext(t *testing.T) {
 	if gotBody.Topic != "new_ctx" {
 		t.Errorf("request topic = %q, want %q", gotBody.Topic, "new_ctx")
 	}
-	if resp.Status != "locked" {
-		t.Errorf("Status = %q, want %q", resp.Status, "locked")
+	if resp.ID != 7 {
+		t.Errorf("ID = %d, want 7", resp.ID)
+	}
+	if resp.URL == "" {
+		t.Error("expected URL to be populated")
 	}
 }
 
@@ -134,7 +137,8 @@ func TestUnlockContext(t *testing.T) {
 			t.Errorf("force = %q, want true", r.URL.Query().Get("force"))
 		}
 		json.NewEncoder(w).Encode(ContextDeleteResponse{
-			Status: "deleted", Topic: "old_ctx", Archived: true,
+			Topic: "old_ctx", Archived: true, DeletedCount: 1, VersionsDeleted: []string{"1 version(s)"},
+			URL: "https://stompy.ai/dashboard/projects/myproj/contexts/old_ctx",
 		})
 	}))
 	defer srv.Close()
@@ -144,8 +148,8 @@ func TestUnlockContext(t *testing.T) {
 	if err != nil {
 		t.Fatalf("UnlockContext() error: %v", err)
 	}
-	if resp.Status != "deleted" {
-		t.Errorf("Status = %q, want %q", resp.Status, "deleted")
+	if resp.DeletedCount != 1 {
+		t.Errorf("DeletedCount = %d, want 1", resp.DeletedCount)
 	}
 	if !resp.Archived {
 		t.Error("expected Archived = true")

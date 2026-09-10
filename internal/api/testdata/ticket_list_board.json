@@ -1,0 +1,37 @@
+{
+  "columns": [
+    {
+      "status": "backlog",
+      "count": 1,
+      "tickets": [
+        {
+          "id": 1,
+          "title": "test ticket for 1967",
+          "description": null,
+          "type": "task",
+          "status": "backlog",
+          "priority": "medium",
+          "assignee": null,
+          "tags": null,
+          "created_at": 1788712823.845169,
+          "updated_at": 1788712823.845169,
+          "closed_at": null,
+          "history": [],
+          "links": [],
+          "url": "https://staging.stompy.ai/dashboard/projects/dogfood_cli_1967/tickets/1"
+        }
+      ],
+      "compact_tickets": [],
+      "has_more": false,
+      "truncated_count": 0
+    }
+  ],
+  "total": 1,
+  "type_filter": null,
+  "include_archived": false,
+  "archived_count": 0,
+  "view": "kanban",
+  "limit_per_column": 200,
+  "project": "dogfood_cli_1967",
+  "my_role": "owner"
+}

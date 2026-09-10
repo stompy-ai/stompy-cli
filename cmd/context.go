@@ -1,9 +1,12 @@
 package cmd
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/banton/stompy-cli/internal/api"
@@ -88,6 +91,12 @@ var contextLockCmd = &cobra.Command{
 			return err
 		}
 
+		if !isTableOutput() {
+			f := getFormatter()
+			fmt.Print(f.FormatRaw(resp))
+			return nil
+		}
+
 		fmt.Printf("%s Context locked: %s (version %s)\n", output.Success("✓"), output.Teal(resp.Topic), resp.Version)
 		return nil
 	},
@@ -162,6 +171,12 @@ var contextUnlockCmd = &cobra.Command{
 		resp, err := apiClient.UnlockContext(project, topic, version, force, noArchive)
 		if err != nil {
 			return err
+		}
+
+		if !isTableOutput() {
+			f := getFormatter()
+			fmt.Print(f.FormatRaw(resp))
+			return nil
 		}
 
 		archivedStr := ""
@@ -370,6 +385,11 @@ var contextExploreCmd = &cobra.Command{
 
 		var resp ContextExploreResponse
 		if err := mcpClient.CallToolTyped("context_explore", mcpArgs, &resp); err != nil {
+			var raw *api.NonJSONToolResult
+			if errors.As(err, &raw) {
+				fmt.Println(raw.Text) // server-rendered text (STOMPY-1921)
+				return nil
+			}
 			return err
 		}
 
@@ -408,8 +428,8 @@ var contextExploreCmd = &cobra.Command{
 
 // ContextDashboardResponse is the MCP context_dashboard tool response.
 type ContextDashboardResponse struct {
-	Project       string `json:"project"`
-	TotalContexts int    `json:"total_contexts"`
+	Project       string         `json:"project"`
+	TotalContexts int            `json:"total_contexts"`
 	ByPriority    map[string]int `json:"by_priority"`
 	RecentTopics  []string       `json:"recent_topics,omitempty"`
 	StaleCount    int            `json:"stale_count"`
@@ -432,6 +452,11 @@ var contextDashboardCmd = &cobra.Command{
 
 		var resp ContextDashboardResponse
 		if err := mcpClient.CallToolTyped("context_dashboard", mcpArgs, &resp); err != nil {
+			var raw *api.NonJSONToolResult
+			if errors.As(err, &raw) {
+				fmt.Println(raw.Text) // server-rendered text (STOMPY-1921)
+				return nil
+			}
 			return err
 		}
 
@@ -458,16 +483,61 @@ var contextDashboardCmd = &cobra.Command{
 	},
 }
 
-// RecallBatchResponse is the MCP recall_batch tool response.
+// RecallBatchItem is one topic's entry in a recall_batch result.
+type RecallBatchItem struct {
+	Topic   string `json:"topic"`
+	Content string `json:"content,omitempty"`
+	Preview string `json:"preview,omitempty"`
+	Version string `json:"version,omitempty"`
+	Found   bool   `json:"found"`
+	Error   string `json:"error,omitempty"`
+}
+
+// RecallBatchResponse is the MCP recall_batch tool response. Since 6.6.x the
+// server returns `results` as an OBJECT keyed by topic plus `found` /
+// `not_found` lists (STOMPY-1921); older builds returned a list. Both parse.
 type RecallBatchResponse struct {
-	Results []struct {
-		Topic   string `json:"topic"`
-		Content string `json:"content,omitempty"`
-		Preview string `json:"preview,omitempty"`
-		Version string `json:"version,omitempty"`
-		Found   bool   `json:"found"`
-		Error   string `json:"error,omitempty"`
-	} `json:"results"`
+	Results []RecallBatchItem
+}
+
+func (r *RecallBatchResponse) UnmarshalJSON(b []byte) error {
+	var asList struct {
+		Results []RecallBatchItem `json:"results"`
+	}
+	if err := json.Unmarshal(b, &asList); err == nil && asList.Results != nil {
+		r.Results = asList.Results
+		return nil
+	}
+	var asMap struct {
+		Results  map[string]RecallBatchItem `json:"results"`
+		Found    []string                   `json:"found"`
+		NotFound []string                   `json:"not_found"`
+	}
+	if err := json.Unmarshal(b, &asMap); err != nil {
+		return err
+	}
+	order := asMap.Found
+	if len(order) == 0 {
+		for k := range asMap.Results {
+			order = append(order, k)
+		}
+		sort.Strings(order)
+	}
+	for _, topic := range order {
+		item, ok := asMap.Results[topic]
+		if !ok {
+			continue
+		}
+		if item.Topic == "" {
+			item.Topic = topic
+		}
+		item.Found = true
+		r.Results = append(r.Results, item)
+	}
+	for _, topic := range asMap.NotFound {
+		r.Results = append(r.Results, RecallBatchItem{Topic: topic, Found: false})
+	}
+	return nil
 }
 
 var contextBatchCmd = &cobra.Command{
@@ -491,6 +561,11 @@ var contextBatchCmd = &cobra.Command{
 
 		var resp RecallBatchResponse
 		if err := mcpClient.CallToolTyped("recall_batch", mcpArgs, &resp); err != nil {
+			var raw *api.NonJSONToolResult
+			if errors.As(err, &raw) {
+				fmt.Println(raw.Text) // server-rendered text (STOMPY-1921)
+				return nil
+			}
 			return err
 		}
 

@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -38,6 +39,7 @@ type TicketResponse struct {
 	ClosedAt    *float64         `json:"closed_at,omitempty"`
 	History     []TicketHistory  `json:"history,omitempty"`
 	Links       []TicketLinkResp `json:"links,omitempty"`
+	URL         string           `json:"url,omitempty"`
 }
 
 type TicketHistory struct {
@@ -48,9 +50,33 @@ type TicketHistory struct {
 	Timestamp float64 `json:"timestamp"`
 }
 
+// TicketListResponse decodes GET /projects/{name}/tickets. The route answers
+// the kanban BOARD shape ({"columns":[{"status","count","tickets":[...]}],
+// "total":N}) — STOMPY-1967 item 6. A flat {"tickets":[...],"total":N} shape
+// (used by /tickets/search) is also accepted so this type stays reusable.
 type TicketListResponse struct {
-	Tickets []TicketResponse `json:"tickets"`
-	Total   int              `json:"total"`
+	Tickets []TicketResponse
+	Total   int
+}
+
+func (r *TicketListResponse) UnmarshalJSON(b []byte) error {
+	var raw struct {
+		Tickets []TicketResponse `json:"tickets"`
+		Columns []BoardColumn    `json:"columns"`
+		Total   int              `json:"total"`
+	}
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	r.Total = raw.Total
+	if len(raw.Columns) > 0 {
+		for _, col := range raw.Columns {
+			r.Tickets = append(r.Tickets, col.Tickets...)
+		}
+		return nil
+	}
+	r.Tickets = raw.Tickets
+	return nil
 }
 
 type TicketSearchResponse struct {
