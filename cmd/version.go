@@ -22,14 +22,7 @@ var versionCmd = &cobra.Command{
 		fmt.Printf("stompy-cli %s\n", Version)
 
 		// Try to fetch API version from server
-		apiURL := flagAPIURL
-		if apiURL == "" {
-			if flagUseStaging {
-				apiURL = config.GetStagingAPIURL()
-			} else {
-				apiURL = config.GetAPIURL()
-			}
-		}
+		apiURL := resolveAPIURL()
 		if apiURL != "" {
 			c := api.NewClient(apiURL, "", Version, false)
 			// Ping health endpoint to get version headers
