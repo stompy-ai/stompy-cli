@@ -26,20 +26,23 @@ type TicketUpdate struct {
 }
 
 type TicketResponse struct {
-	ID          int              `json:"id"`
-	Title       string           `json:"title"`
-	Description *string          `json:"description,omitempty"`
-	Type        string           `json:"type"`
-	Status      string           `json:"status"`
-	Priority    string           `json:"priority"`
-	Assignee    *string          `json:"assignee,omitempty"`
-	Tags        []string         `json:"tags,omitempty"`
-	CreatedAt   *float64         `json:"created_at,omitempty"`
-	UpdatedAt   *float64         `json:"updated_at,omitempty"`
-	ClosedAt    *float64         `json:"closed_at,omitempty"`
-	History     []TicketHistory  `json:"history,omitempty"`
-	Links       []TicketLinkResp `json:"links,omitempty"`
-	URL         string           `json:"url,omitempty"`
+	ClaimedBy    *LeaseHolder     `json:"claimed_by,omitempty"`
+	ClaimedAt    *float64         `json:"claimed_at,omitempty"`
+	ClaimedUntil *float64         `json:"claimed_until,omitempty"`
+	ID           int              `json:"id"`
+	Title        string           `json:"title"`
+	Description  *string          `json:"description,omitempty"`
+	Type         string           `json:"type"`
+	Status       string           `json:"status"`
+	Priority     string           `json:"priority"`
+	Assignee     *string          `json:"assignee,omitempty"`
+	Tags         []string         `json:"tags,omitempty"`
+	CreatedAt    *float64         `json:"created_at,omitempty"`
+	UpdatedAt    *float64         `json:"updated_at,omitempty"`
+	ClosedAt     *float64         `json:"closed_at,omitempty"`
+	History      []TicketHistory  `json:"history,omitempty"`
+	Links        []TicketLinkResp `json:"links,omitempty"`
+	URL          string           `json:"url,omitempty"`
 }
 
 type TicketHistory struct {
