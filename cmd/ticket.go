@@ -119,6 +119,9 @@ var ticketGetCmd = &cobra.Command{
 		if resp.UpdatedAt != nil {
 			fields = append(fields, output.KeyValue{Key: "Updated", Value: formatTimestamp(*resp.UpdatedAt)})
 		}
+		if resp.ClaimedBy != nil {
+			fields = append(fields, output.KeyValue{Key: "Lease", Value: leaseDisplay(*resp)})
+		}
 
 		fmt.Print(f.FormatSingle(fields))
 		return nil
@@ -259,7 +262,7 @@ var ticketListCmd = &cobra.Command{
 
 		f := getFormatter()
 		colorize := isTableOutput()
-		headers := []string{"ID", "TYPE", "STATUS", "PRIORITY", "TITLE", "ASSIGNEE"}
+		headers := []string{"ID", "TYPE", "STATUS", "PRIORITY", "TITLE", "ASSIGNEE", "LEASE"}
 		var rows [][]string
 		for _, t := range resp.Tickets {
 			assignee := ""
@@ -279,6 +282,7 @@ var ticketListCmd = &cobra.Command{
 				tPriority,
 				truncate(t.Title, 50),
 				assignee,
+				leaseDisplay(t),
 			})
 		}
 
