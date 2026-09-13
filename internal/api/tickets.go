@@ -171,6 +171,15 @@ func (c *Client) TransitionTicket(project string, id int, status string) (*Ticke
 	return &resp, nil
 }
 
+// CloseTicket delegates terminal status and transition ordering to the server.
+func (c *Client) CloseTicket(project string, id int) (*TicketResponse, error) {
+	var resp TicketResponse
+	if err := c.Post(fmt.Sprintf("/projects/%s/tickets/%d/close", url.PathEscape(project), id), nil, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
 func (c *Client) SearchTickets(project, query string, ticketType, status string, limit int) (*TicketSearchResponse, error) {
 	params := url.Values{}
 	params.Set("query", query)

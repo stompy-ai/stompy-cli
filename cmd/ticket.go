@@ -212,14 +212,6 @@ var ticketMoveCmd = &cobra.Command{
 	},
 }
 
-// closeStatusMap maps ticket type to terminal status.
-var closeStatusMap = map[string]string{
-	"task":     "done",
-	"bug":      "resolved",
-	"feature":  "shipped",
-	"decision": "decided",
-}
-
 var ticketCloseCmd = &cobra.Command{
 	Use:   "close <id>",
 	Short: "Close a ticket (infers terminal status from ticket type)",
@@ -235,23 +227,12 @@ var ticketCloseCmd = &cobra.Command{
 			return fmt.Errorf("invalid ticket ID: %s", args[0])
 		}
 
-		// Fetch ticket to determine type
-		ticket, err := apiClient.GetTicket(project, id)
+		resp, err := apiClient.CloseTicket(project, id)
 		if err != nil {
 			return err
 		}
 
-		status, ok := closeStatusMap[ticket.Type]
-		if !ok {
-			status = "done" // fallback
-		}
-
-		resp, err := apiClient.TransitionTicket(project, id, status)
-		if err != nil {
-			return err
-		}
-
-		fmt.Printf("%s Ticket #%d closed (%s → %s)\n", output.Success("✓"), resp.ID, output.ColorStatus(ticket.Status), output.ColorStatus(resp.Status))
+		fmt.Printf("%s Ticket #%d closed (%s)\n", output.Success("✓"), resp.ID, output.ColorStatus(resp.Status))
 		return nil
 	},
 }
