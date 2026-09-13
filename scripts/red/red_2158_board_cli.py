@@ -31,9 +31,9 @@ REVERTS = [
 ]
 
 
-def run(repo, report):
+def run(repo, report, tests="scripts/red/test_board_cli.py"):
     result = subprocess.run(
-        [sys.executable, "-m", "pytest", "scripts/red/test_board_cli.py", "-q",
+        [sys.executable, "-m", "pytest", tests, "-q",
          "-p", "no:cacheprovider", f"--junitxml={report}"],
         cwd=repo, capture_output=True, text=True, timeout=120,
     )
