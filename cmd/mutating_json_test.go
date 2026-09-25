@@ -245,3 +245,79 @@ func TestProjectDelete_HonoursJSONOutput(t *testing.T) {
 		t.Errorf("json output = %+v, want name=myproj status=deleted", got)
 	}
 }
+
+// STOMPY-2455: the create response names the open tickets it may duplicate.
+// The CLI decodes into a typed struct, so an undeclared field was dropped on
+// BOTH outputs — -o json re-encodes the struct, and the table line is fixed.
+func duplicateHintServer() *httptest.Server {
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusCreated)
+		w.Write([]byte(`{"id": 12, "title": "Refiled", "type": "task", "status": "backlog",
+			"priority": "medium",
+			"possible_duplicates": [{"id": 5, "display_id": "STOMPY-5", "title": "Original",
+				"status": "triage", "similarity": 0.72}],
+			"duplicate_guidance": "If this is one of these, append to it and close this one as a duplicate."}`))
+	}))
+}
+
+func TestTicketCreate_JSONKeepsPossibleDuplicates(t *testing.T) {
+	srv := duplicateHintServer()
+	defer srv.Close()
+
+	oldClient, oldProject := apiClient, flagProject
+	apiClient = api.NewClient(srv.URL, "tok", "dev", false)
+	flagProject = "proj"
+	defer func() { apiClient, flagProject = oldClient, oldProject }()
+
+	ticketCreateCmd.Flags().Set("title", "Refiled")
+
+	var out string
+	withOutputFormat("json", func() {
+		out = captureStdout(t, func() {
+			if err := ticketCreateCmd.RunE(ticketCreateCmd, nil); err != nil {
+				t.Fatalf("RunE() error: %v", err)
+			}
+		})
+	})
+
+	var got struct {
+		PossibleDuplicates []map[string]any `json:"possible_duplicates"`
+		DuplicateGuidance  string           `json:"duplicate_guidance"`
+	}
+	if err := json.Unmarshal([]byte(out), &got); err != nil {
+		t.Fatalf("-o json output is not valid JSON: %v\noutput: %q", err, out)
+	}
+	if len(got.PossibleDuplicates) != 1 || got.PossibleDuplicates[0]["display_id"] != "STOMPY-5" {
+		t.Fatalf("json output dropped possible_duplicates: %q", out)
+	}
+	if got.PossibleDuplicates[0]["similarity"] != 0.72 || got.DuplicateGuidance == "" {
+		t.Errorf("json output dropped similarity or guidance: %q", out)
+	}
+}
+
+func TestTicketCreate_TableNamesPossibleDuplicates(t *testing.T) {
+	srv := duplicateHintServer()
+	defer srv.Close()
+
+	oldClient, oldProject := apiClient, flagProject
+	apiClient = api.NewClient(srv.URL, "tok", "dev", false)
+	flagProject = "proj"
+	defer func() { apiClient, flagProject = oldClient, oldProject }()
+
+	ticketCreateCmd.Flags().Set("title", "Refiled")
+
+	var out string
+	withOutputFormat("table", func() {
+		out = captureStdout(t, func() {
+			if err := ticketCreateCmd.RunE(ticketCreateCmd, nil); err != nil {
+				t.Fatalf("RunE() error: %v", err)
+			}
+		})
+	})
+
+	for _, want := range []string{"Ticket #12 created", "STOMPY-5", "Original", "0.72", "append to it"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("table output missing %q: %q", want, out)
+		}
+	}
+}

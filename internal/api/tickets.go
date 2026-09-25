@@ -43,6 +43,18 @@ type TicketResponse struct {
 	History      []TicketHistory  `json:"history,omitempty"`
 	Links        []TicketLinkResp `json:"links,omitempty"`
 	URL          string           `json:"url,omitempty"`
+	// STOMPY-2455: create only. Advisory: the open tickets this one may repeat.
+	PossibleDuplicates []DuplicateHint `json:"possible_duplicates,omitempty"`
+	DuplicateGuidance  string          `json:"duplicate_guidance,omitempty"`
+	DuplicateCheck     string          `json:"duplicate_check,omitempty"`
+}
+
+type DuplicateHint struct {
+	ID         int     `json:"id"`
+	DisplayID  string  `json:"display_id"`
+	Title      string  `json:"title"`
+	Status     string  `json:"status"`
+	Similarity float64 `json:"similarity"`
 }
 
 type TicketHistory struct {
