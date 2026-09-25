@@ -11,10 +11,15 @@ import (
 	"github.com/banton/stompy-cli/internal/api"
 )
 
+// STOMPY-2223: the server moved the REST UNIT_CAP_REACHED refusal onto the
+// STOMPY-1870 wire — `detail` is the plain remedy sentence and `error_code`
+// rides beside it as a sibling, not nested inside it. This fixture used the
+// pre-2202 nested shape, which failed to unmarshal into APIError.Detail
+// (a string) and dumped the raw JSON into the error instead of the sentence.
 func TestRestoreCapRefusalDoesNotPrintSuccess(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(403)
-		fmt.Fprint(w, `{"detail":{"code":"UNIT_CAP_REACHED","message":"Archive or park a ticket first"}}`)
+		fmt.Fprint(w, `{"detail":"Archive or park a ticket first","error_code":"UNIT_CAP_REACHED","current":2,"cap":2,"resets_at":null,"upgrade_url":null}`)
 	}))
 	defer server.Close()
 	oldClient, oldProject := apiClient, flagProject
@@ -23,8 +28,14 @@ func TestRestoreCapRefusalDoesNotPrintSuccess(t *testing.T) {
 	command := newTicketArchiveCmd("unarchive")
 	var err error
 	output := captureStdout(t, func() { err = command.RunE(command, []string{"7"}) })
-	if err == nil || !strings.Contains(err.Error(), "UNIT_CAP_REACHED") || output != "" {
+	if err == nil || output != "" {
 		t.Fatalf("err=%v output=%q", err, output)
+	}
+	if !strings.Contains(err.Error(), "Archive or park a ticket first") {
+		t.Fatalf("lost the remedy sentence: err=%v", err)
+	}
+	if !strings.Contains(err.Error(), "UNIT_CAP_REACHED") {
+		t.Fatalf("lost the error_code: err=%v", err)
 	}
 }
 

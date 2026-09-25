@@ -24,7 +24,9 @@ func TestTicketCloseUsesCanonicalClose(t *testing.T) {
 				w.Header().Set("Content-Type", "application/json")
 				if refused {
 					w.WriteHeader(http.StatusForbidden)
-					fmt.Fprint(w, `{"detail":{"code":"UNIT_CAP_REACHED","message":"unit cap reached"}}`)
+					// STOMPY-2223: the STOMPY-1870 wire — `detail` is the plain
+					// sentence, `error_code` a sibling, not nested inside it.
+					fmt.Fprint(w, `{"detail":"Pro plan: 300 of 300 units used this month (UTC). Resets on 2026-10-01.","error_code":"UNIT_CAP_REACHED","current":300,"cap":300,"resets_at":"2026-10-01T00:00:00+00:00","upgrade_url":"https://www.stompy.ai/dashboard/settings"}`)
 					return
 				}
 				fmt.Fprint(w, `{"id":7,"status":"done"}`)
@@ -39,8 +41,14 @@ func TestTicketCloseUsesCanonicalClose(t *testing.T) {
 				t.Errorf("expected one canonical request, got %d", calls)
 			}
 			if refused {
-				if err == nil || !strings.Contains(err.Error(), "UNIT_CAP_REACHED") || out != "" {
+				if err == nil || out != "" {
 					t.Fatalf("lost refusal or false success: err=%v out=%q", err, out)
+				}
+				if !strings.Contains(err.Error(), "Pro plan: 300 of 300 units used this month") {
+					t.Fatalf("lost the remedy sentence: err=%v", err)
+				}
+				if !strings.Contains(err.Error(), "UNIT_CAP_REACHED") {
+					t.Fatalf("lost the error_code: err=%v", err)
 				}
 			} else if err != nil || !strings.Contains(out, "#7 closed") || !strings.Contains(out, "done") {
 				t.Fatalf("lost server result: err=%v out=%q", err, out)
