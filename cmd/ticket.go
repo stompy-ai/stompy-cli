@@ -66,6 +66,16 @@ var ticketCreateCmd = &cobra.Command{
 		}
 
 		fmt.Printf("%s Ticket #%d created: %s\n", output.Success("✓"), resp.ID, resp.Title)
+		for _, d := range resp.PossibleDuplicates {
+			fmt.Printf("  %s possible duplicate %s (%s, %.2f): %s\n",
+				output.Warn("!"), d.DisplayID, d.Status, d.Similarity, d.Title)
+		}
+		if resp.DuplicateGuidance != "" {
+			fmt.Printf("  %s\n", output.Dim(resp.DuplicateGuidance))
+		}
+		if resp.DuplicateCheck == "unavailable" {
+			fmt.Printf("  %s\n", output.Dim("Duplicate check unavailable; nothing was compared."))
+		}
 		return nil
 	},
 }
