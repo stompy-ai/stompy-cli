@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -80,9 +81,13 @@ func (c *Client) Do(method, path string, body any, params url.Values) ([]byte, i
 	}
 
 	var lastErr error
+	var retryAfter time.Duration // set from a 503's Retry-After header (STOMPY-2504); 0 means use the default backoff
 	for attempt := 0; attempt <= retries; attempt++ {
 		if attempt > 0 {
 			delay := retryBaseDelay * time.Duration(1<<(attempt-1))
+			if retryAfter > 0 {
+				delay = retryAfter
+			}
 			if c.Verbose {
 				fmt.Fprintf(os.Stderr, "[DEBUG]     Retry %d/%d after %s\n", attempt, retries, delay)
 			}
@@ -161,7 +166,26 @@ func (c *Client) Do(method, path string, body any, params url.Values) ([]byte, i
 		}
 
 		if isRetryableStatus(resp.StatusCode) {
-			lastErr = &APIError{StatusCode: resp.StatusCode, Message: http.StatusText(resp.StatusCode)}
+			// STOMPY-2504: a 502/503/504 used to discard the body outright,
+			// hiding a deliberate STOMPY-1870 refusal (CODE_INDEX_DISABLED,
+			// BILLING_NOT_CONFIGURED, ADMISSION_BUSY, ...) behind a bare
+			// "API error 503: Service Unavailable". Parse it like any other
+			// non-2xx; a proxy's HTML 503 just leaves Detail empty and falls
+			// through to the same generic message as before.
+			apiErr := &APIError{StatusCode: resp.StatusCode}
+			_ = json.Unmarshal(respBody, apiErr)
+			if apiErr.Detail != "" {
+				// The server already said why — retrying a deliberate
+				// refusal blindly would not help, so surface it now
+				// instead of waiting out the remaining attempts.
+				if apiErr.Message == "" {
+					apiErr.Message = http.StatusText(resp.StatusCode)
+				}
+				return nil, resp.StatusCode, apiErr
+			}
+			apiErr.Message = http.StatusText(resp.StatusCode)
+			lastErr = apiErr
+			retryAfter = parseRetryAfterHeader(resp.Header.Get("Retry-After"))
 			continue
 		}
 
@@ -181,6 +205,17 @@ func (c *Client) Do(method, path string, body any, params url.Values) ([]byte, i
 	}
 
 	return nil, 0, lastErr
+}
+
+// parseRetryAfterHeader reads a Retry-After header as whole seconds
+// (STOMPY-2504); the HTTP-date form and anything else unparseable yield 0,
+// which leaves the default exponential backoff in place.
+func parseRetryAfterHeader(v string) time.Duration {
+	secs, err := strconv.Atoi(strings.TrimSpace(v))
+	if err != nil || secs < 0 {
+		return 0
+	}
+	return time.Duration(secs) * time.Second
 }
 
 func isIdempotent(method string) bool {
