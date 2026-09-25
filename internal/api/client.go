@@ -176,6 +176,7 @@ func (c *Client) Do(method, path string, body any, params url.Values) ([]byte, i
 			return nil, resp.StatusCode, apiErr
 		}
 
+		printUsageWarning(respBody)
 		return respBody, resp.StatusCode, nil
 	}
 

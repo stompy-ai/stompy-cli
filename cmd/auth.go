@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/banton/stompy-cli/internal/api"
 	"github.com/banton/stompy-cli/internal/auth"
 	"github.com/banton/stompy-cli/internal/config"
 	"github.com/banton/stompy-cli/internal/output"
@@ -58,11 +59,16 @@ var whoamiCmd = &cobra.Command{
 
 		// Check API key first
 		if flagAPIKey != "" || config.GetAPIKey() != "" {
-			fmt.Print(f.FormatSingle([]output.KeyValue{
+			token := flagAPIKey
+			if token == "" {
+				token = config.GetAPIKey()
+			}
+			fields := []output.KeyValue{
 				{Key: "Environment", Value: string(env)},
 				{Key: "Auth Method", Value: "API Key"},
 				{Key: "Status", Value: "Authenticated"},
-			}))
+			}
+			fmt.Print(f.FormatSingle(append(fields, usageFields(token)...)))
 			return nil
 		}
 
@@ -91,10 +97,39 @@ var whoamiCmd = &cobra.Command{
 		if !expiry.IsZero() {
 			fields = append(fields, output.KeyValue{Key: "Token Expiry", Value: expiry.Local().Format(time.RFC3339)})
 		}
+		fields = append(fields, usageFields(token)...)
 
 		fmt.Print(f.FormatSingle(fields))
 		return nil
 	},
+}
+
+// usageFields fetches GET /billing/usage (STOMPY-2187) for `whoami`
+// (STOMPY-2232 item 2) and renders it as key/value rows: Tier, Units Used
+// (used/cap, or the unavailable reason when the meter can't measure — never
+// a fabricated 0), and Resets (only for a windowed, non-lifetime cap).
+// Usage is best-effort: a fetch error (old server, network) leaves whoami's
+// auth-status answer intact rather than failing the command over it.
+func usageFields(token string) []output.KeyValue {
+	client := api.NewClient(resolveAPIURL(), token, Version, flagVerbose)
+	usage, err := client.GetUsage()
+	if err != nil || usage == nil {
+		return nil
+	}
+	fields := []output.KeyValue{{Key: "Tier", Value: usage.Tier}}
+	switch {
+	case usage.UnavailableReason != nil && *usage.UnavailableReason != "":
+		fields = append(fields, output.KeyValue{Key: "Units Used", Value: "unavailable (" + *usage.UnavailableReason + ")"})
+	case usage.UnitsUsed != nil && usage.Cap != nil:
+		fields = append(fields, output.KeyValue{
+			Key:   "Units Used",
+			Value: fmt.Sprintf("%d / %d", *usage.UnitsUsed, *usage.Cap),
+		})
+		if usage.PeriodEnd != nil && *usage.PeriodEnd != "" {
+			fields = append(fields, output.KeyValue{Key: "Resets", Value: *usage.PeriodEnd})
+		}
+	}
+	return fields
 }
 
 func init() {
