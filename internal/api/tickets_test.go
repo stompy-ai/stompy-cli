@@ -347,6 +347,51 @@ func TestListLinks(t *testing.T) {
 	}
 }
 
+// STOMPY-2527: _get_links_for_ticket's UNION ALL (stompy-ticketing
+// service.py) always selects tl.* verbatim. Its second branch matches
+// tl.target_id = ticket_id (viewing from the target's side) but the row's
+// own target_id column is still the queried ticket's own id, not the far
+// end — target_title/target_status correctly join to the source ticket,
+// so only the id field is stale. ListLinks must normalize so TARGET ID
+// names the OTHER ticket regardless of which side you queried from.
+func TestListLinks_ReverseDirectionNormalizesTargetID(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/projects/proj/tickets/2/links" {
+			t.Errorf("path = %s, want /projects/proj/tickets/2/links", r.URL.Path)
+		}
+		// Link was created as source=1 -[related]-> target=2. Queried from
+		// ticket 2 (the target), the server's raw row still carries
+		// target_id=2 (itself) even though target_title/target_status
+		// resolve to ticket 1, the real other end.
+		json.NewEncoder(w).Encode([]TicketLinkResp{
+			{ID: 1, SourceID: 1, TargetID: 2, LinkType: "related",
+				TargetTitle: "Login fails with special characters in password", TargetStatus: "resolved"},
+		})
+	}))
+	defer srv.Close()
+
+	c := NewClient(srv.URL, "tok", "dev", false)
+	resp, err := c.ListLinks("proj", 2)
+	if err != nil {
+		t.Fatalf("ListLinks() error: %v", err)
+	}
+	if len(resp) != 1 {
+		t.Fatalf("len(resp) = %d, want 1", len(resp))
+	}
+	if resp[0].TargetID != 1 {
+		t.Errorf("TargetID = %d, want 1 (the other ticket, not the queried one)", resp[0].TargetID)
+	}
+	if resp[0].SourceID != 2 {
+		t.Errorf("SourceID = %d, want 2 (the queried ticket)", resp[0].SourceID)
+	}
+	if resp[0].TargetTitle != "Login fails with special characters in password" {
+		t.Errorf("TargetTitle = %q, unexpectedly changed", resp[0].TargetTitle)
+	}
+	if resp[0].TargetStatus != "resolved" {
+		t.Errorf("TargetStatus = %q, unexpectedly changed", resp[0].TargetStatus)
+	}
+}
+
 func TestRemoveLink(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodDelete {
