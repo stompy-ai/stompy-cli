@@ -86,6 +86,41 @@ func TestListTickets_FlatShapeFallback(t *testing.T) {
 	}
 }
 
+// STOMPY-2526: GET /projects/{name}/tickets has no `status` query param —
+// list_project_tickets (src/api/routes/tickets.py, read via origin/main)
+// only accepts include_terminal/type_filter/limit, groups tickets into board
+// columns, and drops terminal statuses unless include_terminal=true. An
+// explicit --status must therefore (a) ask the server to include terminal
+// columns and (b) narrow the flattened result to that status client-side —
+// otherwise the flag is silently ignored, which is the dogfood repro.
+func TestListTickets_StatusFilterHonored(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("include_terminal") != "true" {
+			t.Errorf("include_terminal = %q, want true (server hides terminal statuses unless asked)", r.URL.Query().Get("include_terminal"))
+		}
+		w.Write([]byte(`{"columns":[` +
+			`{"status":"backlog","count":1,"tickets":[{"id":1,"title":"Backlog item","type":"task","status":"backlog","priority":"low"}]},` +
+			`{"status":"resolved","count":1,"tickets":[{"id":2,"title":"Fixed bug","type":"bug","status":"resolved","priority":"high"}]}` +
+			`],"total":2}`))
+	}))
+	defer srv.Close()
+
+	c := NewClient(srv.URL, "tok", "dev", false)
+	resp, err := c.ListTickets("proj", "resolved", "", "", 0, 0)
+	if err != nil {
+		t.Fatalf("ListTickets() error: %v", err)
+	}
+	if len(resp.Tickets) != 1 {
+		t.Fatalf("len(Tickets) = %d, want 1 (--status resolved must exclude the backlog ticket)", len(resp.Tickets))
+	}
+	if resp.Tickets[0].Status != "resolved" {
+		t.Errorf("Tickets[0].Status = %q, want resolved", resp.Tickets[0].Status)
+	}
+	if resp.Total != 1 {
+		t.Errorf("Total = %d, want 1 (matches the filtered count, not the unfiltered board total)", resp.Total)
+	}
+}
+
 func TestGetTicket(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/projects/proj/tickets/42" {

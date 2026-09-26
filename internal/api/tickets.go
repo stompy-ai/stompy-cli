@@ -132,7 +132,13 @@ type TransitionRequest struct {
 func (c *Client) ListTickets(project string, status, ticketType, priority string, limit, offset int) (*TicketListResponse, error) {
 	params := url.Values{}
 	if status != "" {
+		// STOMPY-2526: list_project_tickets (src/api/routes/tickets.py) has no
+		// status query param — it groups tickets into board columns and hides
+		// terminal statuses unless include_terminal=true. Ask for everything
+		// and narrow client-side below, or an explicit --status is silently
+		// dropped by the server.
 		params.Set("status", status)
+		params.Set("include_terminal", "true")
 	}
 	if ticketType != "" {
 		params.Set("type", ticketType)
@@ -149,6 +155,16 @@ func (c *Client) ListTickets(project string, status, ticketType, priority string
 	var resp TicketListResponse
 	if err := c.Get(fmt.Sprintf("/projects/%s/tickets", url.PathEscape(project)), params, &resp); err != nil {
 		return nil, err
+	}
+	if status != "" {
+		filtered := resp.Tickets[:0]
+		for _, t := range resp.Tickets {
+			if t.Status == status {
+				filtered = append(filtered, t)
+			}
+		}
+		resp.Tickets = filtered
+		resp.Total = len(filtered)
 	}
 	return &resp, nil
 }
