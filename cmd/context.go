@@ -47,6 +47,25 @@ func parseTopicRef(ref, projectFlag string) (project, topic, version string) {
 	return projectFlag, base, version
 }
 
+// resolveTopicRef parses a deeplink topic ref and resolves its project,
+// falling back to getProject() (default project / STOMPY_PROJECT / error)
+// ONLY when ref carries no project of its own (STOMPY-2528). A
+// "project/topic" or "_global/topic" deeplink must never require -p — the
+// ref already names its project — so getProject() is skipped entirely in
+// that case rather than called up front and erroring out on a plain-topic
+// requirement the deeplink didn't need.
+func resolveTopicRef(ref string) (project, topic, version string, err error) {
+	project, topic, version = parseTopicRef(ref, flagProject)
+	if project != "" {
+		return project, topic, version, nil
+	}
+	project, err = getProject()
+	if err != nil {
+		return "", "", "", err
+	}
+	return project, topic, version, nil
+}
+
 var contextCmd = &cobra.Command{
 	Use:   "context",
 	Short: "Manage contexts (persistent memory)",
@@ -62,12 +81,10 @@ var contextLockCmd = &cobra.Command{
   stompy context lock plain-topic --content "..."`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		projectFlag, err := getProject()
+		project, topic, _, err := resolveTopicRef(args[0])
 		if err != nil {
 			return err
 		}
-
-		project, topic, _ := parseTopicRef(args[0], projectFlag)
 
 		content, err := resolveContent(cmd)
 		if err != nil {
@@ -113,13 +130,11 @@ var contextRecallCmd = &cobra.Command{
   stompy context recall plain-topic@v2`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		projectFlag, err := getProject()
+		versionFlag, _ := cmd.Flags().GetString("version")
+		project, topic, versionRef, err := resolveTopicRef(args[0])
 		if err != nil {
 			return err
 		}
-
-		versionFlag, _ := cmd.Flags().GetString("version")
-		project, topic, versionRef := parseTopicRef(args[0], projectFlag)
 
 		// --version flag takes precedence over @version suffix in deeplink
 		version := versionFlag
@@ -157,12 +172,10 @@ var contextUnlockCmd = &cobra.Command{
   stompy context unlock _global/topic`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		projectFlag, err := getProject()
+		project, topic, _, err := resolveTopicRef(args[0])
 		if err != nil {
 			return err
 		}
-
-		project, topic, _ := parseTopicRef(args[0], projectFlag)
 
 		version, _ := cmd.Flags().GetString("version")
 		force, _ := cmd.Flags().GetBool("force")
@@ -287,12 +300,10 @@ var contextUpdateCmd = &cobra.Command{
   stompy context update _global/topic --content "..."`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		projectFlag, err := getProject()
+		project, topic, _, err := resolveTopicRef(args[0])
 		if err != nil {
 			return err
 		}
-
-		project, topic, _ := parseTopicRef(args[0], projectFlag)
 
 		content, err := resolveContent(cmd)
 		if err != nil {
@@ -327,12 +338,10 @@ var contextMoveCmd = &cobra.Command{
   stompy context move _global/topic --to my-project`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		projectFlag, err := getProject()
+		project, topic, _, err := resolveTopicRef(args[0])
 		if err != nil {
 			return err
 		}
-
-		project, topic, _ := parseTopicRef(args[0], projectFlag)
 
 		target, _ := cmd.Flags().GetString("to")
 		if target == "" {

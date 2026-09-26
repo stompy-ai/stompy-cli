@@ -10,6 +10,8 @@ import (
 	"testing"
 
 	"github.com/banton/stompy-cli/internal/api"
+	"github.com/banton/stompy-cli/internal/config"
+	"github.com/spf13/viper"
 )
 
 // STOMPY-1967 item 1: the mutating commands (ticket create/update, context
@@ -213,6 +215,68 @@ func TestContextUnlock_HonoursJSONOutput(t *testing.T) {
 	}
 	if got["archived"] != true {
 		t.Errorf("json output missing/wrong archived: %+v", got)
+	}
+}
+
+// STOMPY-2528: `context lock _global/topic` (and unlock) documented in
+// --help as needing no -p/--project flag, since the deeplink already names
+// its project. In practice getProject() ran first and errored client-side
+// before the deeplink was even parsed, whenever no -p was passed and no
+// default project was configured. Deeplinks must resolve without -p.
+func TestContextLock_GlobalDeeplinkNeedsNoProjectFlag(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.Contains(r.URL.Path, "_global") {
+			t.Errorf("path = %s, want it to route to the _global project", r.URL.Path)
+		}
+		w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(api.ContextCreateResponse{
+			ID: 1, Topic: "dogfood_global_pref_20260926", Version: "1.0",
+		})
+	}))
+	defer srv.Close()
+
+	// No -p and no default/env project configured — the deeplink alone
+	// must be enough.
+	viper.Reset()
+	t.Setenv("HOME", t.TempDir())
+	if err := config.Load(); err != nil {
+		t.Fatalf("config.Load() error: %v", err)
+	}
+
+	oldClient, oldProject := apiClient, flagProject
+	apiClient = api.NewClient(srv.URL, "tok", "dev", false)
+	flagProject = ""
+	defer func() { apiClient, flagProject = oldClient, oldProject }()
+
+	contextLockCmd.Flags().Set("content", "hello world")
+
+	if err := contextLockCmd.RunE(contextLockCmd, []string{"_global/dogfood_global_pref_20260926"}); err != nil {
+		t.Fatalf("RunE() error: %v (a _global/ deeplink must not require -p)", err)
+	}
+}
+
+func TestContextUnlock_GlobalDeeplinkNeedsNoProjectFlag(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.Contains(r.URL.Path, "_global") {
+			t.Errorf("path = %s, want it to route to the _global project", r.URL.Path)
+		}
+		json.NewEncoder(w).Encode(api.ContextDeleteResponse{Topic: "dogfood_global_pref_20260926"})
+	}))
+	defer srv.Close()
+
+	viper.Reset()
+	t.Setenv("HOME", t.TempDir())
+	if err := config.Load(); err != nil {
+		t.Fatalf("config.Load() error: %v", err)
+	}
+
+	oldClient, oldProject := apiClient, flagProject
+	apiClient = api.NewClient(srv.URL, "tok", "dev", false)
+	flagProject = ""
+	defer func() { apiClient, flagProject = oldClient, oldProject }()
+
+	if err := contextUnlockCmd.RunE(contextUnlockCmd, []string{"_global/dogfood_global_pref_20260926"}); err != nil {
+		t.Fatalf("RunE() error: %v (a _global/ deeplink must not require -p)", err)
 	}
 }
 
