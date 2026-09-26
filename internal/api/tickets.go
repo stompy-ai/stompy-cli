@@ -245,6 +245,17 @@ func (c *Client) ListLinks(project string, ticketID int) ([]TicketLinkResp, erro
 	if err := c.Get(fmt.Sprintf("/projects/%s/tickets/%d/links", url.PathEscape(project), ticketID), nil, &resp); err != nil {
 		return nil, err
 	}
+	// STOMPY-2527: the server's link row is fetched with a UNION of two
+	// directions (stompy-ticketing's _get_links_for_ticket); when this
+	// ticket is the LINK'S target, target_title/target_status already
+	// resolve to the other ticket, but the row's own target_id column is
+	// still ticketID itself. Normalize so target_id always names the OTHER
+	// ticket, regardless of which side of the link we queried from.
+	for i := range resp {
+		if resp[i].TargetID == ticketID {
+			resp[i].SourceID, resp[i].TargetID = resp[i].TargetID, resp[i].SourceID
+		}
+	}
 	return resp, nil
 }
 
