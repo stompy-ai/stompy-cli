@@ -147,19 +147,6 @@ func (c *Client) UpdateContext(project, topic string, req ContextUpdateRequest) 
 	return &resp, nil
 }
 
-func (c *Client) SearchContexts(project, query string, limit int) (*ContextListResponse, error) {
-	params := url.Values{}
-	params.Set("search", query)
-	if limit > 0 {
-		params.Set("limit", strconv.Itoa(limit))
-	}
-	var resp ContextListResponse
-	if err := c.Get(fmt.Sprintf("/projects/%s/contexts", url.PathEscape(project)), params, &resp); err != nil {
-		return nil, err
-	}
-	return &resp, nil
-}
-
 func (c *Client) MoveContext(project, topic, targetProject string) (*ContextMoveResponse, error) {
 	body := map[string]string{"target_project": targetProject}
 	var resp ContextMoveResponse

@@ -177,28 +177,6 @@ func TestUpdateContext(t *testing.T) {
 	}
 }
 
-func TestSearchContexts(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/projects/proj/contexts" {
-			t.Errorf("path = %s, want /projects/proj/contexts", r.URL.Path)
-		}
-		if r.URL.Query().Get("search") != "architecture" {
-			t.Errorf("search = %q, want architecture", r.URL.Query().Get("search"))
-		}
-		json.NewEncoder(w).Encode(ContextListResponse{Total: 2})
-	}))
-	defer srv.Close()
-
-	c := NewClient(srv.URL, "tok", "dev", false)
-	resp, err := c.SearchContexts("proj", "architecture", 0)
-	if err != nil {
-		t.Fatalf("SearchContexts() error: %v", err)
-	}
-	if resp.Total != 2 {
-		t.Errorf("Total = %d, want 2", resp.Total)
-	}
-}
-
 func TestMoveContext(t *testing.T) {
 	var gotBody map[string]string
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
