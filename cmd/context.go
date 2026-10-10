@@ -249,46 +249,12 @@ var contextListCmd = &cobra.Command{
 
 var contextSearchCmd = &cobra.Command{
 	Use:   "search <query>",
-	Short: "Search contexts",
-	Args:  cobra.ExactArgs(1),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		project, err := getProject()
-		if err != nil {
-			return err
-		}
-
-		limit, _ := cmd.Flags().GetInt("limit")
-
-		resp, err := apiClient.SearchContexts(project, args[0], limit)
-		if err != nil {
-			return err
-		}
-
-		f := getFormatter()
-		headers := []string{"ID", "TOPIC", "PRIORITY", "PREVIEW"}
-		var rows [][]string
-		for _, c := range resp.Contexts {
-			preview := ""
-			if c.Preview != nil {
-				preview = *c.Preview
-				if len(preview) > 60 {
-					preview = preview[:57] + "..."
-				}
-			}
-			rows = append(rows, []string{
-				fmt.Sprintf("%d", c.ID),
-				c.Topic,
-				c.Priority,
-				preview,
-			})
-		}
-
-		fmt.Print(f.FormatTable(headers, rows))
-		if isTableOutput() {
-			fmt.Printf("\nFound: %d contexts\n", resp.Total)
-		}
-		return nil
-	},
+	Short: "Search contexts by meaning and keyword",
+	Long: `Hybrid semantic + keyword search over a project's contexts
+(GET /projects/{name}/search — the same route and ranking as MCP context_search).
+Same command as 'stompy search'.`,
+	Args: cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error { return runSearch(cmd, args[0]) },
 }
 
 var contextUpdateCmd = &cobra.Command{
@@ -638,7 +604,7 @@ func init() {
 	contextListCmd.Flags().Int("offset", 0, "Offset for pagination")
 	contextListCmd.Flags().Bool("fresh", false, "Bypass server cache for fresh results")
 
-	contextSearchCmd.Flags().Int("limit", 0, "Limit results")
+	addSearchFlags(contextSearchCmd)
 
 	contextUpdateCmd.Flags().String("content", "", "New content (use @file to read from file)")
 	contextUpdateCmd.Flags().String("priority", "", "New priority")
