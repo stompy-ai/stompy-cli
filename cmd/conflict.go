@@ -187,7 +187,7 @@ var conflictResolveCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Print(resolveSummary(resp))
+		fmt.Print(resolveSummary(resp, project))
 		return nil
 	},
 }
@@ -196,7 +196,11 @@ var conflictResolveCmd = &cobra.Command{
 // the rejected side's topic server-side (STOMPY-2663), so the summary names it
 // and the one-line undo — a bare "resolved" would hide that a context just
 // left recall. dismiss and merge print exactly the line they always did.
-func resolveSummary(resp *api.ConflictResponse) string {
+//
+// The undo is the CLI's OWN command, never the server's `undo` string: that
+// text is worded for the door that asked (MCP set_lifecycle, REST route), and
+// one string cannot be right for every door.
+func resolveSummary(resp *api.ConflictResponse, project string) string {
 	line := fmt.Sprintf("%s Conflict %s resolved (%s)\n", output.Success("✓"), resp.ID, resp.Status)
 	a := resp.ArchivedContext
 	if a == nil {
@@ -205,7 +209,8 @@ func resolveSummary(resp *api.ConflictResponse) string {
 	if !a.Archived {
 		return line + fmt.Sprintf("  nothing archived (%s)\n", a.Reason)
 	}
-	return line + fmt.Sprintf("  archived %s v%s (kept %s); undo: %s\n", a.Topic, a.Version, a.KeptTopic, a.Undo)
+	undo := fmt.Sprintf("stompy context lifecycle %s -p %s --state active", a.Topic, project)
+	return line + fmt.Sprintf("  archived %s v%s (kept %s); undo: %s\n", a.Topic, a.Version, a.KeptTopic, undo)
 }
 
 func init() {
@@ -215,7 +220,7 @@ func init() {
 
 	conflictDetectCmd.Flags().String("scope", "", "Detection scope (all, recent)")
 
-	conflictResolveCmd.Flags().String("resolution", "", "Resolution (required): keep_a / keep_b keep that side and ARCHIVE the other side's topic (undo: set_lifecycle active); dismiss = not a conflict, merge: nothing is archived")
+	conflictResolveCmd.Flags().String("resolution", "", "Resolution (required): keep_a / keep_b keep that side and ARCHIVE the other side's topic (undo: stompy context lifecycle <topic> --state active); dismiss = not a conflict, merge: nothing is archived")
 
 	conflictCmd.AddCommand(conflictListCmd)
 	conflictCmd.AddCommand(conflictGetCmd)
