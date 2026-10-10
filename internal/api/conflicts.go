@@ -37,6 +37,22 @@ type ConflictResponse struct {
 	ResolvedAt        *float64     `json:"resolved_at,omitempty"`
 	ResolutionNotes   *string      `json:"resolution_notes,omitempty"`
 	CreatedAt         *float64     `json:"created_at,omitempty"`
+	// ArchivedContext is present on a keep_a/keep_b resolve response
+	// (STOMPY-2663): which topic the resolution archived, or why nothing was.
+	ArchivedContext *ArchivedContext `json:"archived_context,omitempty"`
+}
+
+// ArchivedContext mirrors src/api/routes/conflicts_models.py's
+// ConflictResponse.archived_context. Archived=false carries a Reason
+// (same_topic, already_archived, loser_gone, winner_gone, not_a_context).
+type ArchivedContext struct {
+	Archived          bool   `json:"archived"`
+	Topic             string `json:"topic,omitempty"`
+	Version           string `json:"version,omitempty"`
+	KeptTopic         string `json:"kept_topic,omitempty"`
+	PreviousLifecycle string `json:"previous_lifecycle,omitempty"`
+	Reason            string `json:"reason,omitempty"`
+	Undo              string `json:"undo,omitempty"`
 }
 
 // ConflictListResponse wraps a list of conflicts.
