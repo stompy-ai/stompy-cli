@@ -1,0 +1,29 @@
+{
+  "source": "dementia-production surface_contract.json (origin/main, 2026-10-10): capability rest route + cli command. Only commands whose route was verified against the backend contract today are listed.",
+  "not_covered": [
+    "context lifecycle (CLI lands in PR #26; contract maps it to MCP only)",
+    "context move, context explore, context batch, context dashboard",
+    "ticket update/move/close/list/board/archive/lease/link",
+    "project list/brief/key *, conflict get/detect",
+    "bug, file, auth, billing commands (no contract capability)"
+  ],
+  "routes": [
+    {"capability": "context.search", "command": "context search", "args": ["-p", "proj", "context", "search", "a vague query"], "method": "GET", "path_template": "/projects/{name}/search"},
+    {"capability": "context.search", "command": "search", "args": ["-p", "proj", "search", "a vague query"], "method": "GET", "path_template": "/projects/{name}/search"},
+    {"capability": "context.lock", "command": "context lock", "args": ["-p", "proj", "context", "lock", "topic_a", "--content", "c"], "method": "POST", "path_template": "/projects/{name}/contexts"},
+    {"capability": "context.recall", "command": "context recall", "args": ["-p", "proj", "context", "recall", "topic_a"], "method": "GET", "path_template": "/projects/{name}/contexts/{topic}"},
+    {"capability": "context.update", "command": "context update", "args": ["-p", "proj", "context", "update", "topic_a", "--content", "c2"], "method": "PUT", "path_template": "/projects/{name}/contexts/{topic}"},
+    {"capability": "context.unlock", "command": "context unlock", "args": ["-p", "proj", "context", "unlock", "topic_a", "--force"], "method": "DELETE", "path_template": "/projects/{name}/contexts/{topic}"},
+    {"capability": "context.explore", "command": "context list", "args": ["-p", "proj", "context", "list"], "method": "GET", "path_template": "/projects/{project_name}/contexts"},
+    {"capability": "ticket.crud", "command": "ticket create", "args": ["-p", "proj", "ticket", "create", "--title", "t"], "method": "POST", "path_template": "/projects/{name}/tickets"},
+    {"capability": "ticket.crud", "command": "ticket get", "args": ["-p", "proj", "ticket", "get", "42"], "method": "GET", "path_template": "/projects/{name}/tickets/{ticket_id}"},
+    {"capability": "ticket.search", "command": "ticket search", "args": ["-p", "proj", "ticket", "search", "auth"], "method": "GET", "path_template": "/projects/{name}/tickets/search"},
+    {"capability": "project.create", "command": "project create", "args": ["project", "create", "proj"], "method": "POST", "path_template": "/projects"},
+    {"capability": "project.info", "command": "project info", "args": ["project", "info", "proj"], "method": "GET", "path_template": "/projects/{project_name}"},
+    {"capability": "project.delete", "command": "project delete", "args": ["project", "delete", "proj", "--confirm"], "method": "DELETE", "path_template": "/projects/{project_name}"},
+    {"capability": "conflict.list", "command": "conflict list", "args": ["-p", "proj", "conflict", "list"], "method": "GET", "path_template": "/conflicts"},
+    {"capability": "conflict.resolve", "command": "conflict resolve", "args": ["-p", "proj", "conflict", "resolve", "c-1", "--resolution", "dismiss"], "method": "POST", "path_template": "/conflicts/{conflict_id}/resolve"},
+    {"capability": "board.post", "command": "board post", "args": ["-p", "proj", "board", "post", "--body", "hello"], "method": "POST", "path_template": "/projects/{name}/board"},
+    {"capability": "board.read", "command": "board read", "args": ["-p", "proj", "board", "read"], "method": "GET", "path_template": "/projects/{name}/board"}
+  ]
+}

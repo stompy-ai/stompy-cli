@@ -31,6 +31,8 @@ type SearchResult struct {
 	RRFScore      *float64 `json:"rrf_score,omitempty"`
 	RerankScore   *float64 `json:"rerank_score,omitempty"`
 	TemporalScore *float64 `json:"temporal_score,omitempty"`
+	Version       string   `json:"version,omitempty"`
+	Lifecycle     string   `json:"lifecycle,omitempty"`
 	Source        string   `json:"source,omitempty"`
 	Scope         string   `json:"scope,omitempty"`
 	IsChunk       bool     `json:"is_chunk,omitempty"`
@@ -74,19 +76,38 @@ type SearchResponse struct {
 	Results    []SearchResult `json:"results"`
 	TotalFound int            `json:"total_found"`
 	SearchMode string         `json:"search_mode,omitempty"`
+
+	// Raw is the response exactly as the API sent it, for -o json/yaml (the
+	// typed fields above model only what the table renders).
+	Raw any `json:"-"`
 }
 
 // Search performs hybrid semantic + keyword search across a project.
 func (c *Client) Search(project, query string, limit int) (*SearchResponse, error) {
-	params := url.Values{}
-	params.Set("query", query)
+	extra := url.Values{}
 	if limit > 0 {
-		params.Set("limit", strconv.Itoa(limit))
+		extra.Set("limit", strconv.Itoa(limit))
 	}
+	return c.SearchWith(project, query, extra)
+}
 
-	var resp SearchResponse
-	if err := c.Get(fmt.Sprintf("/projects/%s/search", project), params, &resp); err != nil {
+// SearchWith is Search plus any other query parameters the route accepts
+// (priority, tags, scope, threshold, ...); `query` always wins.
+func (c *Client) SearchWith(project, query string, extra url.Values) (*SearchResponse, error) {
+	params := url.Values{}
+	for k, v := range extra {
+		params[k] = v
+	}
+	params.Set("query", query)
+
+	var raw json.RawMessage
+	if err := c.Get(fmt.Sprintf("/projects/%s/search", url.PathEscape(project)), params, &raw); err != nil {
 		return nil, err
 	}
+	var resp SearchResponse
+	if err := json.Unmarshal(raw, &resp); err != nil {
+		return nil, fmt.Errorf("decoding search response: %w", err)
+	}
+	_ = json.Unmarshal(raw, &resp.Raw)
 	return &resp, nil
 }
