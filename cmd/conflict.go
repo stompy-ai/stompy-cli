@@ -187,9 +187,25 @@ var conflictResolveCmd = &cobra.Command{
 			return err
 		}
 
-		fmt.Printf("%s Conflict %s resolved (%s)\n", output.Success("✓"), resp.ID, resp.Status)
+		fmt.Print(resolveSummary(resp))
 		return nil
 	},
+}
+
+// resolveSummary is what `conflict resolve` prints. keep_a / keep_b ARCHIVE
+// the rejected side's topic server-side (STOMPY-2663), so the summary names it
+// and the one-line undo — a bare "resolved" would hide that a context just
+// left recall. dismiss and merge print exactly the line they always did.
+func resolveSummary(resp *api.ConflictResponse) string {
+	line := fmt.Sprintf("%s Conflict %s resolved (%s)\n", output.Success("✓"), resp.ID, resp.Status)
+	a := resp.ArchivedContext
+	if a == nil {
+		return line
+	}
+	if !a.Archived {
+		return line + fmt.Sprintf("  nothing archived (%s)\n", a.Reason)
+	}
+	return line + fmt.Sprintf("  archived %s v%s (kept %s); undo: %s\n", a.Topic, a.Version, a.KeptTopic, a.Undo)
 }
 
 func init() {
@@ -199,7 +215,7 @@ func init() {
 
 	conflictDetectCmd.Flags().String("scope", "", "Detection scope (all, recent)")
 
-	conflictResolveCmd.Flags().String("resolution", "", "Resolution: dismiss, keep_a, keep_b, merge (required)")
+	conflictResolveCmd.Flags().String("resolution", "", "Resolution (required): keep_a / keep_b keep that side and ARCHIVE the other side's topic (undo: set_lifecycle active); dismiss = not a conflict, merge: nothing is archived")
 
 	conflictCmd.AddCommand(conflictListCmd)
 	conflictCmd.AddCommand(conflictGetCmd)

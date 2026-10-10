@@ -151,3 +151,24 @@ func TestResolveConflict_StringIDAndQueryParam(t *testing.T) {
 		t.Errorf("Status = %q, want %q", resp.Status, "user_resolved")
 	}
 }
+
+// STOMPY-2663: the resolve response carries the archived topic; the client
+// must decode it rather than drop it.
+func TestResolveConflict_DecodesArchivedContext(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{"id":"uuid-1","status":"user_resolved","archived_context":` +
+			`{"archived":true,"topic":"refund_window_b","version":"1.1",` +
+			`"undo":"set_lifecycle(topic=\"refund_window_b\", state=\"active\")"}}`))
+	}))
+	defer srv.Close()
+
+	c := NewClient(srv.URL, "tok", "dev", false)
+	resp, err := c.ResolveConflict("myproj", "uuid-1", ConflictResolveRequest{Resolution: "keep_a"})
+	if err != nil {
+		t.Fatalf("ResolveConflict() error: %v", err)
+	}
+	if resp.ArchivedContext == nil || !resp.ArchivedContext.Archived ||
+		resp.ArchivedContext.Topic != "refund_window_b" || resp.ArchivedContext.Version != "1.1" {
+		t.Fatalf("archived_context not decoded: %+v", resp.ArchivedContext)
+	}
+}

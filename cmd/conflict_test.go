@@ -3,6 +3,8 @@ package cmd
 import (
 	"strings"
 	"testing"
+
+	"github.com/banton/stompy-cli/internal/api"
 )
 
 // STOMPY-1814: stompy conflict list --status unresolved|resolved|dismissed
@@ -57,6 +59,54 @@ func TestValidateConflictStatusErrorNamesVocabulary(t *testing.T) {
 	for _, want := range []string{"pending", "user_resolved", "auto_resolved", "dismissed"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Errorf("error %q does not name valid value %q", err.Error(), want)
+		}
+	}
+}
+
+// STOMPY-2663: keep_a / keep_b ARCHIVES the rejected side's topic. The server
+// says so in `archived_context`; the CLI must not hide it behind a bare
+// "resolved (user_resolved)", and its help must state the semantics.
+func TestResolveSummaryNamesTheArchivedTopicAndUndo(t *testing.T) {
+	resp := &api.ConflictResponse{
+		ID:     "c-1",
+		Status: "user_resolved",
+		ArchivedContext: &api.ArchivedContext{
+			Archived: true, Topic: "refund_window_b", Version: "1.1",
+			KeptTopic: "refund_window_a",
+			Undo:      `set_lifecycle(topic="refund_window_b", state="active")`,
+		},
+	}
+	got := resolveSummary(resp)
+	for _, want := range []string{"refund_window_b", "1.1", "set_lifecycle", "refund_window_a"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("summary %q does not contain %q", got, want)
+		}
+	}
+}
+
+func TestResolveSummaryExplainsWhyNothingWasArchived(t *testing.T) {
+	resp := &api.ConflictResponse{
+		ID: "c-1", Status: "user_resolved",
+		ArchivedContext: &api.ArchivedContext{Archived: false, Reason: "same_topic"},
+	}
+	if got := resolveSummary(resp); !strings.Contains(got, "same_topic") {
+		t.Errorf("summary %q does not say why nothing was archived", got)
+	}
+}
+
+func TestResolveSummaryForDismissIsUnchanged(t *testing.T) {
+	resp := &api.ConflictResponse{ID: "c-1", Status: "dismissed"}
+	got := resolveSummary(resp)
+	if strings.Contains(strings.ToLower(got), "archiv") {
+		t.Errorf("a dismiss must not mention archiving, got %q", got)
+	}
+}
+
+func TestResolveHelpStatesTheArchiveSemantics(t *testing.T) {
+	usage := conflictResolveCmd.Flags().Lookup("resolution").Usage
+	for _, want := range []string{"keep_a", "keep_b", "archive", "dismiss"} {
+		if !strings.Contains(strings.ToLower(usage), want) {
+			t.Errorf("--resolution help %q does not mention %q", usage, want)
 		}
 	}
 }
