@@ -126,6 +126,7 @@ stompy
 │   ├── list                       # List contexts
 │   ├── search <query>             # Search contexts
 │   ├── update <topic> --content   # Update context
+│   ├── lifecycle <topic> --state S # Park/deliver/archive/re-activate
 │   └── move <topic> --to <proj>   # Move to another project
 ├── ticket
 │   ├── create --title T           # Create ticket

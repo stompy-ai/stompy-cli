@@ -155,3 +155,35 @@ func (c *Client) MoveContext(project, topic, targetProject string) (*ContextMove
 	}
 	return &resp, nil
 }
+
+// ContextLifecycleRequest is POST /projects/{name}/contexts/{topic}/lifecycle
+// (STOMPY-2722). ReviewAfterDays is a pointer so an explicit 0 ("review now")
+// is sent and an unset flag is not.
+type ContextLifecycleRequest struct {
+	State           string `json:"state"`
+	ReviewAfterDays *int   `json:"review_after_days,omitempty"`
+	Note            string `json:"note,omitempty"`
+}
+
+// ContextLifecycleResponse is the MCP set_lifecycle payload, field for field.
+// An idempotent re-transition answers changed=false with a note and no
+// previous/changelogged.
+type ContextLifecycleResponse struct {
+	Topic        string `json:"topic"`
+	Lifecycle    string `json:"lifecycle"`
+	Previous     string `json:"previous,omitempty"`
+	Changed      bool   `json:"changed"`
+	Changelogged string `json:"changelogged,omitempty"`
+	ReviewAfter  string `json:"review_after,omitempty"`
+	Note         string `json:"note,omitempty"`
+	URL          string `json:"url,omitempty"`
+}
+
+func (c *Client) SetContextLifecycle(project, topic string, req ContextLifecycleRequest) (*ContextLifecycleResponse, error) {
+	var resp ContextLifecycleResponse
+	path := fmt.Sprintf("/projects/%s/contexts/%s/lifecycle", url.PathEscape(project), url.PathEscape(topic))
+	if err := c.Post(path, req, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
