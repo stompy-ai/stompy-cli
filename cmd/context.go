@@ -147,6 +147,12 @@ var contextRecallCmd = &cobra.Command{
 			return err
 		}
 
+		// STOMPY-2724: -o json/yaml is the API object, state and review date included.
+		if !isTableOutput() {
+			fmt.Print(getFormatter().FormatRaw(resp.Raw))
+			return nil
+		}
+
 		f := getFormatter()
 		fields := []output.KeyValue{
 			{Key: "Topic", Value: resp.Topic},
@@ -155,6 +161,11 @@ var contextRecallCmd = &cobra.Command{
 		}
 		if len(resp.Tags) > 0 {
 			fields = append(fields, output.KeyValue{Key: "Tags", Value: strings.Join(resp.Tags, ", ")})
+		}
+		// Active (and "an older server did not say") render nothing: zero
+		// lines on the common path, exactly like the MCP header.
+		if resp.Lifecycle != "" && resp.Lifecycle != "active" {
+			fields = append(fields, output.KeyValue{Key: "Lifecycle", Value: resp.LifecycleLabel()})
 		}
 		fields = append(fields, output.KeyValue{Key: "Content", Value: resp.Content})
 
@@ -225,8 +236,13 @@ var contextListCmd = &cobra.Command{
 			return err
 		}
 
+		if !isTableOutput() {
+			fmt.Print(getFormatter().FormatRaw(resp.Raw))
+			return nil
+		}
+
 		f := getFormatter()
-		headers := []string{"ID", "TOPIC", "VERSION", "PRIORITY", "TAGS", "ACCESS COUNT"}
+		headers := []string{"ID", "TOPIC", "VERSION", "PRIORITY", "LIFECYCLE", "REVIEW", "TAGS", "ACCESS COUNT"}
 		var rows [][]string
 		for _, c := range resp.Contexts {
 			rows = append(rows, []string{
@@ -234,6 +250,8 @@ var contextListCmd = &cobra.Command{
 				c.Topic,
 				c.Version,
 				c.Priority,
+				dashIfEmpty(c.Lifecycle),
+				dashIfEmpty(c.ReviewAfter),
 				strings.Join(c.Tags, ", "),
 				fmt.Sprintf("%d", c.AccessCount),
 			})
@@ -633,6 +651,15 @@ func init() {
 }
 
 // resolveContent reads content from --content flag, @file reference, or stdin.
+// dashIfEmpty keeps a column cell visible when the server did not say (an
+// older server sends no lifecycle fields).
+func dashIfEmpty(s string) string {
+	if s == "" {
+		return "-"
+	}
+	return s
+}
+
 func resolveContent(cmd *cobra.Command) (string, error) {
 	contentFlag, _ := cmd.Flags().GetString("content")
 

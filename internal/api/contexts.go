@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -33,12 +34,29 @@ type ContextResponse struct {
 	LockedAt     *time.Time `json:"locked_at,omitempty"`
 	LastAccessed *time.Time `json:"last_accessed,omitempty"`
 	AccessCount  int        `json:"access_count"`
+	// STOMPY-2724: the state MCP recall renders as its PARKED/ARCHIVED header.
+	// ReviewAfter is YYYY-MM-DD and set only while parked. An older server
+	// sends neither; both stay empty.
+	Lifecycle   string `json:"lifecycle,omitempty"`
+	ReviewAfter string `json:"review_after,omitempty"`
+}
+
+// LifecycleLabel is the one-line human form of a non-active state:
+// "archived", or "parked (review 2026-11-03)".
+func (c ContextResponse) LifecycleLabel() string {
+	if c.ReviewAfter != "" {
+		return c.Lifecycle + " (review " + c.ReviewAfter + ")"
+	}
+	return c.Lifecycle
 }
 
 type ContextDetailResponse struct {
 	ContextResponse
 	Content  string           `json:"content"`
 	Versions []VersionSummary `json:"versions,omitempty"`
+
+	// Raw is the response exactly as the API sent it, for -o json/yaml.
+	Raw any `json:"-"`
 }
 
 type VersionSummary struct {
@@ -77,6 +95,22 @@ type ContextMoveResponse struct {
 type ContextListResponse struct {
 	Contexts []ContextResponse `json:"contexts"`
 	Total    int               `json:"total"`
+
+	// Raw is the response exactly as the API sent it, for -o json/yaml.
+	Raw any `json:"-"`
+}
+
+// getWithRaw decodes a response into result and, verbatim, into *raw.
+func (c *Client) getWithRaw(path string, params url.Values, result any, raw *any) error {
+	var msg json.RawMessage
+	if err := c.Get(path, params, &msg); err != nil {
+		return err
+	}
+	if err := json.Unmarshal(msg, result); err != nil {
+		return fmt.Errorf("decoding response: %w", err)
+	}
+	_ = json.Unmarshal(msg, raw)
+	return nil
 }
 
 func (c *Client) ListContexts(project string, priority, tags string, limit, offset int) (*ContextListResponse, error) {
@@ -94,7 +128,7 @@ func (c *Client) ListContexts(project string, priority, tags string, limit, offs
 		params.Set("offset", strconv.Itoa(offset))
 	}
 	var resp ContextListResponse
-	if err := c.Get(fmt.Sprintf("/projects/%s/contexts", url.PathEscape(project)), params, &resp); err != nil {
+	if err := c.getWithRaw(fmt.Sprintf("/projects/%s/contexts", url.PathEscape(project)), params, &resp, &resp.Raw); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -106,7 +140,7 @@ func (c *Client) GetContext(project, topic string, version string) (*ContextDeta
 		params.Set("version", version)
 	}
 	var resp ContextDetailResponse
-	if err := c.Get(fmt.Sprintf("/projects/%s/contexts/%s", url.PathEscape(project), url.PathEscape(topic)), params, &resp); err != nil {
+	if err := c.getWithRaw(fmt.Sprintf("/projects/%s/contexts/%s", url.PathEscape(project), url.PathEscape(topic)), params, &resp, &resp.Raw); err != nil {
 		return nil, err
 	}
 	return &resp, nil
