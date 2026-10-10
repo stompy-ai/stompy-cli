@@ -76,8 +76,8 @@ func TestResolveSummaryNamesTheArchivedTopicAndUndo(t *testing.T) {
 			Undo:      `set_lifecycle(topic="refund_window_b", state="active")`,
 		},
 	}
-	got := resolveSummary(resp)
-	for _, want := range []string{"refund_window_b", "1.1", "set_lifecycle", "refund_window_a"} {
+	got := resolveSummary(resp, "proj")
+	for _, want := range []string{"refund_window_b", "1.1", "stompy context lifecycle refund_window_b -p proj --state active", "refund_window_a"} {
 		if !strings.Contains(got, want) {
 			t.Errorf("summary %q does not contain %q", got, want)
 		}
@@ -89,14 +89,14 @@ func TestResolveSummaryExplainsWhyNothingWasArchived(t *testing.T) {
 		ID: "c-1", Status: "user_resolved",
 		ArchivedContext: &api.ArchivedContext{Archived: false, Reason: "same_topic"},
 	}
-	if got := resolveSummary(resp); !strings.Contains(got, "same_topic") {
+	if got := resolveSummary(resp, "proj"); !strings.Contains(got, "same_topic") {
 		t.Errorf("summary %q does not say why nothing was archived", got)
 	}
 }
 
 func TestResolveSummaryForDismissIsUnchanged(t *testing.T) {
 	resp := &api.ConflictResponse{ID: "c-1", Status: "dismissed"}
-	got := resolveSummary(resp)
+	got := resolveSummary(resp, "proj")
 	if strings.Contains(strings.ToLower(got), "archiv") {
 		t.Errorf("a dismiss must not mention archiving, got %q", got)
 	}
