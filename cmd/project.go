@@ -21,6 +21,9 @@ var projectCreateCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		desc, _ := cmd.Flags().GetString("description")
+		if shared, _ := cmd.Flags().GetBool("shared"); shared {
+			return createSharedProject(args[0], desc)
+		}
 		req := api.ProjectCreate{Name: args[0]}
 		if desc != "" {
 			req.Description = &desc
@@ -39,6 +42,27 @@ var projectCreateCmd = &cobra.Command{
 		}))
 		return nil
 	},
+}
+
+// createSharedProject is `project create --shared` (REST POST /shared-projects,
+// the team-project door MCP's project_create already reaches).
+func createSharedProject(name, desc string) error {
+	if desc != "" {
+		return fmt.Errorf("--description is not supported with --shared")
+	}
+	resp, err := apiClient.CreateSharedProject(name)
+	if err != nil {
+		return err
+	}
+	f := getFormatter()
+	fmt.Print(f.FormatSingle([]output.KeyValue{
+		{Key: "Name", Value: resp.Name},
+		{Key: "Project ID", Value: resp.ProjectID},
+		{Key: "Role", Value: resp.MyRole},
+		{Key: "Shared", Value: fmt.Sprintf("%v", resp.IsShared)},
+		{Key: "Created", Value: resp.CreatedAt.Local().Format("2006-01-02 15:04:05")},
+	}))
+	return nil
 }
 
 var projectListCmd = &cobra.Command{
@@ -242,6 +266,7 @@ var projectBriefCmd = &cobra.Command{
 
 func init() {
 	projectCreateCmd.Flags().String("description", "", "Project description")
+	projectCreateCmd.Flags().Bool("shared", false, "Create a team (shared) project you can invite members to")
 	projectListCmd.Flags().Bool("stats", false, "Include project statistics")
 	projectInfoCmd.Flags().Bool("stats", false, "Include project statistics")
 	projectDeleteCmd.Flags().Bool("confirm", false, "Confirm deletion (required)")
@@ -253,6 +278,7 @@ func init() {
 	projectCmd.AddCommand(projectDeleteCmd)
 	projectCmd.AddCommand(projectUseCmd)
 	projectCmd.AddCommand(projectBriefCmd)
+	projectCmd.AddCommand(projectKeyCmd)
 	rootCmd.AddCommand(projectCmd)
 }
 

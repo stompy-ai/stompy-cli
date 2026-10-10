@@ -143,7 +143,7 @@ func (c *Client) Do(method, path string, body any, params url.Values) ([]byte, i
 			if xCache := resp.Header.Get("X-Cache"); xCache != "" {
 				fmt.Fprintf(os.Stderr, "[DEBUG]     X-Cache: %s\n", xCache)
 			}
-			if len(respBody) > 0 {
+			if len(respBody) > 0 && !isKeyMint(method, path) {
 				preview := string(respBody)
 				if len(preview) > 300 {
 					preview = preview[:300] + "..."
@@ -291,4 +291,11 @@ func (c *Client) DeleteWithResult(path string, params url.Values, result any) er
 		}
 	}
 	return nil
+}
+
+// isKeyMint is true for POST /projects/{name}/api-key: its response body holds
+// the only plaintext copy of a minted secret (STOMPY-2705), so --verbose must
+// never preview it.
+func isKeyMint(method, path string) bool {
+	return method == http.MethodPost && strings.HasSuffix(path, "/api-key")
 }
