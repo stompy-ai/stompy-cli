@@ -5,7 +5,9 @@
     "context move, context explore, context batch, context dashboard",
     "ticket update/move/close/list/board/archive/lease/link",
     "project list/brief/key *, conflict get/detect",
-    "bug, file, auth, billing commands (no contract capability)"
+    "bug, file, auth, billing commands (no contract capability)",
+    "init (STOMPY-2742): local-only, no route, like version and project use",
+    "project check (STOMPY-2742): reads .stompy.yaml from cwd, so the oracle's fixed args cannot drive it; it issues project info's route (GET /projects/{name}, ?owner= for shared) and its route is asserted in cmd/repomarker_test.go"
   ],
   "routes": [
     {"capability": "context.search", "command": "context search", "args": ["-p", "proj", "context", "search", "a vague query"], "method": "GET", "path_template": "/projects/{name}/search"},

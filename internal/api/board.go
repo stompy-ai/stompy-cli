@@ -1,10 +1,8 @@
 package api
 
 import (
-	"fmt"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -70,10 +68,5 @@ func (c *Client) ReadBoard(project, since, kinds string, limit int) (*BoardReadR
 }
 
 func boardPath(project string) (string, url.Values) {
-	params := url.Values{}
-	if owner, name, qualified := strings.Cut(project, "/"); qualified {
-		params.Set("owner", owner)
-		project = name
-	}
-	return fmt.Sprintf("/projects/%s/board", url.PathEscape(project)), params
+	return projectPath(project, "/board"), url.Values{}
 }

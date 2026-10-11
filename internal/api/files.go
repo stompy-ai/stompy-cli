@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -75,7 +76,7 @@ func (c *Client) ListFiles(project, search string, limit, offset int) (*FileList
 	}
 
 	var resp FileListResponse
-	if err := c.Get(fmt.Sprintf("/projects/%s/files", project), params, &resp); err != nil {
+	if err := c.Get(projectPath(project, "/files"), params, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -84,7 +85,7 @@ func (c *Client) ListFiles(project, search string, limit, offset int) (*FileList
 // GetFile fetches a single file by ID.
 func (c *Client) GetFile(project string, id int) (*FileResponse, error) {
 	var resp FileResponse
-	if err := c.Get(fmt.Sprintf("/projects/%s/files/%d", project, id), nil, &resp); err != nil {
+	if err := c.Get(projectPath(project, fmt.Sprintf("/files/%d", id)), nil, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -113,10 +114,14 @@ func (c *Client) UploadFile(project, filePath, label string) (*FileUploadRespons
 		return nil, fmt.Errorf("closing multipart writer: %w", err)
 	}
 
-	u := c.BaseURL + fmt.Sprintf("/projects/%s/files", project)
+	u := c.BaseURL + projectPath(project, "/files")
 	if label != "" {
 		// The route reads `label` as a query parameter, not a form field.
-		u += "?" + url.Values{"label": {label}}.Encode()
+		sep := "?"
+		if strings.Contains(u, "?") { // projectPath may already carry ?owner=
+			sep = "&"
+		}
+		u += sep + url.Values{"label": {label}}.Encode()
 	}
 
 	if c.Verbose {
@@ -168,5 +173,5 @@ func (c *Client) UploadFile(project, filePath, label string) (*FileUploadRespons
 
 // DeleteFile deletes a file by ID.
 func (c *Client) DeleteFile(project string, id int) error {
-	return c.Delete(fmt.Sprintf("/projects/%s/files/%d", project, id), nil)
+	return c.Delete(projectPath(project, fmt.Sprintf("/files/%d", id)), nil)
 }

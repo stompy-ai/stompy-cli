@@ -94,7 +94,7 @@ func (c *Client) ListContexts(project string, priority, tags string, limit, offs
 		params.Set("offset", strconv.Itoa(offset))
 	}
 	var resp ContextListResponse
-	if err := c.Get(fmt.Sprintf("/projects/%s/contexts", url.PathEscape(project)), params, &resp); err != nil {
+	if err := c.Get(projectPath(project, "/contexts"), params, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -106,7 +106,7 @@ func (c *Client) GetContext(project, topic string, version string) (*ContextDeta
 		params.Set("version", version)
 	}
 	var resp ContextDetailResponse
-	if err := c.Get(fmt.Sprintf("/projects/%s/contexts/%s", url.PathEscape(project), url.PathEscape(topic)), params, &resp); err != nil {
+	if err := c.Get(projectPath(project, fmt.Sprintf("/contexts/%s", url.PathEscape(topic))), params, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -114,7 +114,7 @@ func (c *Client) GetContext(project, topic string, version string) (*ContextDeta
 
 func (c *Client) LockContext(project string, req ContextCreateRequest) (*ContextCreateResponse, error) {
 	var resp ContextCreateResponse
-	if err := c.Post(fmt.Sprintf("/projects/%s/contexts", url.PathEscape(project)), req, &resp); err != nil {
+	if err := c.Post(projectPath(project, "/contexts"), req, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -133,7 +133,7 @@ func (c *Client) UnlockContext(project, topic string, version string, force, noA
 	}
 
 	var resp ContextDeleteResponse
-	if err := c.DeleteWithResult(fmt.Sprintf("/projects/%s/contexts/%s", url.PathEscape(project), url.PathEscape(topic)), params, &resp); err != nil {
+	if err := c.DeleteWithResult(projectPath(project, fmt.Sprintf("/contexts/%s", url.PathEscape(topic))), params, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -141,7 +141,7 @@ func (c *Client) UnlockContext(project, topic string, version string, force, noA
 
 func (c *Client) UpdateContext(project, topic string, req ContextUpdateRequest) (*ContextResponse, error) {
 	var resp ContextResponse
-	if err := c.Put(fmt.Sprintf("/projects/%s/contexts/%s", url.PathEscape(project), url.PathEscape(topic)), req, &resp); err != nil {
+	if err := c.Put(projectPath(project, fmt.Sprintf("/contexts/%s", url.PathEscape(topic))), req, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -150,7 +150,7 @@ func (c *Client) UpdateContext(project, topic string, req ContextUpdateRequest) 
 func (c *Client) MoveContext(project, topic, targetProject string) (*ContextMoveResponse, error) {
 	body := map[string]string{"target_project": targetProject}
 	var resp ContextMoveResponse
-	if err := c.Post(fmt.Sprintf("/projects/%s/contexts/%s/move", url.PathEscape(project), url.PathEscape(topic)), body, &resp); err != nil {
+	if err := c.Post(projectPath(project, fmt.Sprintf("/contexts/%s/move", url.PathEscape(topic))), body, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -181,7 +181,7 @@ type ContextLifecycleResponse struct {
 
 func (c *Client) SetContextLifecycle(project, topic string, req ContextLifecycleRequest) (*ContextLifecycleResponse, error) {
 	var resp ContextLifecycleResponse
-	path := fmt.Sprintf("/projects/%s/contexts/%s/lifecycle", url.PathEscape(project), url.PathEscape(topic))
+	path := projectPath(project, fmt.Sprintf("/contexts/%s/lifecycle", url.PathEscape(topic)))
 	if err := c.Post(path, req, &resp); err != nil {
 		return nil, err
 	}

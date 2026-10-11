@@ -2,8 +2,6 @@ package api
 
 import (
 	"fmt"
-	"net/url"
-	"strings"
 )
 
 type TicketArchiveResponse struct {
@@ -12,16 +10,7 @@ type TicketArchiveResponse struct {
 }
 
 func archivePath(project, suffix string) string {
-	params := url.Values{}
-	if owner, name, qualified := strings.Cut(project, "/"); qualified {
-		params.Set("owner", owner)
-		project = name
-	}
-	path := fmt.Sprintf("/projects/%s/tickets/%s", url.PathEscape(project), suffix)
-	if len(params) > 0 {
-		path += "?" + params.Encode()
-	}
-	return path
+	return projectPath(project, fmt.Sprintf("/tickets/%s", suffix))
 }
 
 func (c *Client) ArchiveTicket(project, action string, id int) (*TicketArchiveResponse, error) {

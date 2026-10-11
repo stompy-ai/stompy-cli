@@ -169,3 +169,24 @@ func TestGetProject_Error(t *testing.T) {
 		t.Errorf("StatusCode = %d, want 404", apiErr.StatusCode)
 	}
 }
+
+// STOMPY-2742: the canonical `@owner/name` and wire `owner/name` both become
+// GET /projects/{name}?owner=owner; a bare name stays bare.
+func TestGetProjectQualifiedAddressSendsOwnerQuery(t *testing.T) {
+	for _, addr := range []string{"@alice/shared", "alice/shared"} {
+		var gotPath, gotOwner string
+		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			gotPath, gotOwner = r.URL.EscapedPath(), r.URL.Query().Get("owner")
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write([]byte(`{"name":"shared","schema_name":"s","created_at":"2026-01-01T00:00:00Z","role":"member"}`))
+		}))
+		c := NewClient(srv.URL, "tok", "test", false)
+		if _, err := c.GetProject(addr, false); err != nil {
+			t.Fatalf("%s: %v", addr, err)
+		}
+		srv.Close()
+		if gotPath != "/projects/shared" || gotOwner != "alice" {
+			t.Errorf("%s -> %s ?owner=%s", addr, gotPath, gotOwner)
+		}
+	}
+}
