@@ -25,6 +25,10 @@
     {"capability": "project.delete", "command": "project delete", "args": ["project", "delete", "proj", "--confirm"], "method": "DELETE", "path_template": "/projects/{project_name}"},
     {"capability": "conflict.list", "command": "conflict list", "args": ["-p", "proj", "conflict", "list"], "method": "GET", "path_template": "/conflicts"},
     {"capability": "conflict.resolve", "command": "conflict resolve", "args": ["-p", "proj", "conflict", "resolve", "c-1", "--resolution", "dismiss"], "method": "POST", "path_template": "/conflicts/{conflict_id}/resolve"},
+    {"capability": "project.set_metadata", "command": "project set-metadata", "args": ["-p", "proj", "project", "set-metadata", "--purpose", "x"], "method": "PATCH", "path_template": "/projects/{project_name}"},
+    {"capability": "project.link", "command": "project link", "args": ["-p", "proj", "project", "link", "other", "--relation-type", "feeds"], "method": "POST", "path_template": "/projects/{project_name}/edges"},
+    {"capability": "project.unlink", "command": "project unlink", "args": ["-p", "proj", "project", "unlink", "other"], "method": "DELETE", "path_template": "/projects/{project_name}/edges"},
+    {"capability": "project.edges", "command": "project links", "args": ["-p", "proj", "project", "links"], "method": "GET", "path_template": "/projects/{project_name}/edges"},
     {"capability": "board.post", "command": "board post", "args": ["-p", "proj", "board", "post", "--body", "hello"], "method": "POST", "path_template": "/projects/{name}/board"},
     {"capability": "board.read", "command": "board read", "args": ["-p", "proj", "board", "read"], "method": "GET", "path_template": "/projects/{name}/board"}
   ]

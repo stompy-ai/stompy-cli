@@ -24,6 +24,7 @@ type recordedReq struct {
 	method string
 	path   string
 	query  url.Values
+	body   string
 }
 
 // runCLI executes `stompy <args...>` against h and returns stdout, the error
@@ -34,8 +35,8 @@ func runCLI(t *testing.T, h http.HandlerFunc, args ...string) (stdout string, re
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
 	t.Setenv("STOMPY_API_KEY", "")
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = io.ReadAll(r.Body)
-		reqs = append(reqs, recordedReq{r.Method, r.URL.EscapedPath(), r.URL.Query()})
+		b, _ := io.ReadAll(r.Body)
+		reqs = append(reqs, recordedReq{r.Method, r.URL.EscapedPath(), r.URL.Query(), string(b)})
 		h(w, r)
 	}))
 	defer srv.Close()
@@ -52,7 +53,8 @@ func runCLI(t *testing.T, h http.HandlerFunc, args ...string) (stdout string, re
 		})
 	}
 	reset(rootCmd.PersistentFlags())
-	for _, cmdPath := range [][]string{{"search"}, {"context", "search"}, {"init"}, {"project", "check"}} {
+	for _, cmdPath := range [][]string{{"search"}, {"context", "search"}, {"init"}, {"project", "check"},
+		{"project", "set-metadata"}, {"project", "link"}, {"project", "unlink"}, {"project", "links"}} {
 		if c, _, ferr := rootCmd.Find(cmdPath); ferr == nil && c != nil {
 			reset(c.Flags())
 		}

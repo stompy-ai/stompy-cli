@@ -76,6 +76,10 @@ func TestEveryProjectRouteSendsOwnerForQualifiedAddress(t *testing.T) {
 		"GetFile":             func(c *Client, p string) { _, _ = c.GetFile(p, 1) },
 		"UploadFile":          func(c *Client, p string) { _, _ = c.UploadFile(p, up, "lbl") },
 		"DeleteFile":          func(c *Client, p string) { _ = c.DeleteFile(p, 1) },
+		"SetProjectMetadata":  func(c *Client, p string) { _, _ = c.SetProjectMetadata(p, ProjectMetadataUpdate{}) },
+		"LinkProject":         func(c *Client, p string) { _, _ = c.LinkProject(p, ProjectEdgeCreate{Target: "t"}) },
+		"UnlinkProject":       func(c *Client, p string) { _, _ = c.UnlinkProject(p, "t", "") },
+		"ListProjectEdges":    func(c *Client, p string) { _, _ = c.ListProjectEdges(p) },
 		"GetProject":          func(c *Client, p string) { _, _ = c.GetProject(p, false) },
 		"DeleteProject":       func(c *Client, p string) { _ = c.DeleteProject(p) },
 	}
