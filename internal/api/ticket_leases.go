@@ -3,7 +3,6 @@ package api
 import (
 	"fmt"
 	"net/url"
-	"strings"
 )
 
 type LeaseHolder struct {
@@ -34,7 +33,7 @@ func (c *Client) LeaseTicket(project, action string, id int, request TicketLease
 		return nil, fmt.Errorf("unknown lease action: %s", action)
 	}
 	params := url.Values{}
-	if owner, name, qualified := strings.Cut(project, "/"); qualified {
+	if owner, name, qualified := splitOwner(project); qualified {
 		params.Set("owner", owner)
 		project = name
 	}

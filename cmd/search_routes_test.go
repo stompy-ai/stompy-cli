@@ -52,7 +52,7 @@ func runCLI(t *testing.T, h http.HandlerFunc, args ...string) (stdout string, re
 		})
 	}
 	reset(rootCmd.PersistentFlags())
-	for _, cmdPath := range [][]string{{"search"}, {"context", "search"}} {
+	for _, cmdPath := range [][]string{{"search"}, {"context", "search"}, {"init"}, {"project", "check"}} {
 		if c, _, ferr := rootCmd.Find(cmdPath); ferr == nil && c != nil {
 			reset(c.Flags())
 		}

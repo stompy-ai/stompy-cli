@@ -3,7 +3,6 @@ package api
 import (
 	"fmt"
 	"net/url"
-	"strings"
 )
 
 type TicketArchiveResponse struct {
@@ -13,7 +12,7 @@ type TicketArchiveResponse struct {
 
 func archivePath(project, suffix string) string {
 	params := url.Values{}
-	if owner, name, qualified := strings.Cut(project, "/"); qualified {
+	if owner, name, qualified := splitOwner(project); qualified {
 		params.Set("owner", owner)
 		project = name
 	}

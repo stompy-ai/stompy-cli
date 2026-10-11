@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/banton/stompy-cli/internal/repomarker"
 	"github.com/spf13/viper"
 )
 
@@ -210,9 +211,12 @@ func ClearTokens(env Environment) error {
 }
 
 // ResolveProject determines the active project using this precedence:
-// 1. Explicit flag value
-// 2. STOMPY_PROJECT environment variable
-// 3. default_project from config
+//  1. Explicit flag value
+//  2. STOMPY_PROJECT environment variable
+//  3. the default project of the nearest .stompy.yaml walking up from cwd
+//     (STOMPY-2742; a broken file is an error, never a silent fall-through)
+//  4. default_project from config
+//
 // Returns an error if no project can be resolved.
 func ResolveProject(flagValue string) (string, error) {
 	if flagValue != "" {
@@ -221,8 +225,32 @@ func ResolveProject(flagValue string) (string, error) {
 	if env := os.Getenv("STOMPY_PROJECT"); env != "" {
 		return env, nil
 	}
+	if m, _, err := LoadNearestMarker(); err != nil {
+		return "", err
+	} else if m != nil {
+		return m.DefaultProject().Address, nil
+	}
 	if dp := GetDefaultProject(); dp != "" {
 		return dp, nil
 	}
-	return "", fmt.Errorf("no project specified. Set a default with:\n  stompy project use <name>\n\nOr pass -p <name> to any command. Run 'stompy project list' to see available projects")
+	return "", fmt.Errorf("no project specified. Set a default with:\n  stompy project use <name>\n\nOr pass -p <name> to any command, or run 'stompy init --project <address>' in a repo to pin one in .stompy.yaml. Run 'stompy project list' to see available projects")
+}
+
+// LoadNearestMarker returns the marker nearest to the working directory and
+// its path, or (nil, "", nil) when there is none.
+func LoadNearestMarker() (*repomarker.Marker, string, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, "", nil
+	}
+	home, _ := os.UserHomeDir()
+	path, err := repomarker.FindNearest(cwd, home)
+	if err != nil || path == "" {
+		return nil, "", err
+	}
+	m, err := repomarker.Load(path)
+	if err != nil {
+		return nil, "", err
+	}
+	return m, path, nil
 }

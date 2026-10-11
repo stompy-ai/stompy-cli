@@ -118,7 +118,9 @@ stompy
 │   ├── list [--stats]             # List all projects
 │   ├── info <name> [--stats]      # Project details
 │   ├── delete <name> --confirm    # Delete project
-│   └── use <name>                 # Set default project
+│   ├── use <name>                 # Set default project
+│   └── check                      # Verify .stompy.yaml projects resolve for you
+├── init                           # Write .stompy.yaml + AGENTS.md/CLAUDE.md block
 ├── context
 │   ├── lock <topic> --content     # Create/update context
 │   ├── recall <topic>             # Read context
@@ -197,6 +199,43 @@ stompy ticket list -o json | jq '.[] | select(.priority == "high")'
 # YAML
 stompy project list -o yaml
 ```
+
+## Pinning a repo to Stompy projects (`.stompy.yaml`)
+
+A committed `.stompy.yaml` at the repo root says which Stompy project(s) belong
+to the repo, so humans and agents stop guessing. It holds no secrets.
+
+```yaml
+version: 1
+environment: production        # or staging
+projects:
+  - address: "@owner/project"  # canonical; a bare name is your own personal project
+    role: primary              # primary | shared | reference (reference = read-only)
+    default: true              # exactly one default
+    purpose: "one line"
+```
+
+```bash
+stompy init --project @owner/project --role primary --purpose "the product"
+stompy init            # refresh the generated blocks; a second run changes nothing
+stompy project check   # does every address resolve for ME on that environment?
+```
+
+`stompy init` also maintains a managed block between `<!-- stompy:begin -->` and
+`<!-- stompy:end -->` in `AGENTS.md` and `CLAUDE.md` (created if missing; text
+outside the block is never touched). It is generated from `.stompy.yaml`, naming
+the exact `project=` address(es) to pass, the default, the roles and the
+environment. Handles and project names are visible to anyone who can read the repo.
+
+`stompy project check` prints OK / NOT FOUND / UNAUTHORIZED per address and
+exits 0 only if all resolve, 1 otherwise, 2 for a missing or invalid file
+(`-o json` supported).
+
+Project resolution order: `-p/--project` flag, then `STOMPY_PROJECT`, then the
+default of the nearest `.stompy.yaml` walking up from the current directory
+(stopping before your home directory), then `default_project` from config. A
+`.stompy.yaml` that is present but invalid is an error, not a silent fallback.
+`-p @owner/project` and `-p owner/project` both address a project shared to you.
 
 ## Configuration
 

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -91,6 +92,13 @@ func Execute() {
 	}
 
 	if err != nil {
+		var ee *exitError
+		if errors.As(err, &ee) {
+			if ee.msg != "" {
+				fmt.Fprintln(os.Stderr, output.Error("Error:")+"\n  "+ee.msg)
+			}
+			os.Exit(ee.code)
+		}
 		fmt.Fprintln(os.Stderr, output.Error("Error:")+"\n  "+err.Error())
 		os.Exit(1)
 	}
@@ -109,7 +117,7 @@ func Execute() {
 // update" vs "stompy context update").
 func commandNeedsAuth(cmdPath, cmdName string, hasParent, isParentGrouping bool) bool {
 	switch cmdPath {
-	case "stompy login", "stompy logout", "stompy whoami", "stompy version", "stompy update":
+	case "stompy login", "stompy logout", "stompy whoami", "stompy version", "stompy update", "stompy init":
 		return false
 	}
 	switch cmdName {

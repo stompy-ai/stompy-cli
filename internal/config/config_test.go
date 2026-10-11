@@ -403,3 +403,90 @@ func TestResolveProject_Precedence(t *testing.T) {
 		t.Errorf("ResolveProject() = %q, want %q (env should win over config)", got, "env-project")
 	}
 }
+
+// --- STOMPY-2742: repo marker in the precedence chain ---
+
+const markerYAML = `version: 1
+environment: production
+projects:
+  - address: "@markus/stompy"
+    role: primary
+    default: true
+  - address: "@alice/docs"
+    role: reference
+`
+
+// markerRepo makes HOME/work/repo/<nested> with a marker at repo, chdirs there.
+func markerRepo(t *testing.T) {
+	t.Helper()
+	home := setupTestConfig(t)
+	repo := filepath.Join(home, "work", "repo")
+	nested := filepath.Join(repo, "pkg", "deep")
+	if err := os.MkdirAll(nested, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(repo, ".stompy.yaml"), []byte(markerYAML), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Chdir(nested)
+	if err := Load(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestResolveProject_MarkerWalkUpFromNestedDir(t *testing.T) {
+	markerRepo(t)
+	got, err := ResolveProject("")
+	if err != nil || got != "@markus/stompy" {
+		t.Fatalf("ResolveProject() = %q, %v; want the marker default", got, err)
+	}
+}
+
+func TestResolveProject_MarkerPrecedence(t *testing.T) {
+	markerRepo(t)
+	viper.Set("default_project", "global-default")
+
+	// marker beats the global default
+	if got, _ := ResolveProject(""); got != "@markus/stompy" {
+		t.Errorf("marker should beat global default, got %q", got)
+	}
+	// env beats marker
+	t.Setenv("STOMPY_PROJECT", "env-project")
+	if got, _ := ResolveProject(""); got != "env-project" {
+		t.Errorf("env should beat marker, got %q", got)
+	}
+	// flag beats env, and addresses pass through unmangled
+	for _, addr := range []string{"@alice/docs", "alice/docs"} {
+		if got, _ := ResolveProject(addr); got != addr {
+			t.Errorf("flag %q mangled to %q", addr, got)
+		}
+	}
+}
+
+func TestResolveProject_InvalidMarkerIsLoud(t *testing.T) {
+	home := setupTestConfig(t)
+	repo := filepath.Join(home, "repo")
+	if err := os.MkdirAll(repo, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	bad := "version: 1\nprojects:\n  - address: a\n    role: primary\n"
+	if err := os.WriteFile(filepath.Join(repo, ".stompy.yaml"), []byte(bad), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Chdir(repo)
+	_ = Load()
+	viper.Set("default_project", "global-default")
+	if _, err := ResolveProject(""); err == nil || !strings.Contains(err.Error(), ".stompy.yaml") {
+		t.Errorf("a broken marker must fail loudly, not fall back silently: %v", err)
+	}
+}
+
+func TestResolveProject_ErrorMentionsInit(t *testing.T) {
+	home := setupTestConfig(t)
+	t.Chdir(home)
+	_ = Load()
+	_, err := ResolveProject("")
+	if err == nil || !strings.Contains(err.Error(), "stompy init") {
+		t.Errorf("error should mention `stompy init`: %v", err)
+	}
+}
