@@ -1,7 +1,6 @@
 package api
 
 import (
-	"fmt"
 	"net/url"
 	"strings"
 	"time"
@@ -53,14 +52,8 @@ func (c *Client) GetProject(name string, withStats bool) (*ProjectResponse, erro
 	if withStats {
 		params.Set("stats", "true")
 	}
-	// A shared-to-me project is addressed through its owner: `owner/name` or
-	// the canonical `@owner/name` becomes GET /projects/{name}?owner=owner.
-	if owner, bare, qualified := splitOwner(name); qualified {
-		params.Set("owner", owner)
-		name = bare
-	}
 	var resp ProjectResponse
-	if err := c.Get(fmt.Sprintf("/projects/%s", url.PathEscape(name)), params, &resp); err != nil {
+	if err := c.Get(projectPath(name, ""), params, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -76,7 +69,7 @@ func (c *Client) CreateProject(req ProjectCreate) (*ProjectResponse, error) {
 
 func (c *Client) DeleteProject(name string) error {
 	params := url.Values{"confirm": {"true"}}
-	return c.Delete(fmt.Sprintf("/projects/%s", url.PathEscape(name)), params)
+	return c.Delete(projectPath(name, ""), params)
 }
 
 // splitOwner splits an owner-qualified project address. The canonical display
@@ -85,4 +78,21 @@ func (c *Client) DeleteProject(name string) error {
 // caller (STOMPY-2742).
 func splitOwner(project string) (owner, name string, qualified bool) {
 	return strings.Cut(strings.TrimPrefix(project, "@"), "/")
+}
+
+// projectPath is THE builder for every project-scoped route
+// (/projects/{name}{suffix}). A qualified address (`@owner/name`, `owner/name`)
+// becomes the bare name plus `?owner=owner` (STOMPY-2742); suffix is
+// already-escaped path text beginning with "/" (or empty). Do forces any
+// further params on with "&".
+func projectPath(project, suffix string) string {
+	owner, name, qualified := splitOwner(project)
+	if !qualified {
+		name = project
+	}
+	p := "/projects/" + url.PathEscape(name) + suffix
+	if qualified {
+		p += "?owner=" + url.QueryEscape(owner)
+	}
+	return p
 }

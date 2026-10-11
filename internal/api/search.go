@@ -101,7 +101,7 @@ func (c *Client) SearchWith(project, query string, extra url.Values) (*SearchRes
 	params.Set("query", query)
 
 	var raw json.RawMessage
-	if err := c.Get(fmt.Sprintf("/projects/%s/search", url.PathEscape(project)), params, &raw); err != nil {
+	if err := c.Get(projectPath(project, "/search"), params, &raw); err != nil {
 		return nil, err
 	}
 	var resp SearchResponse

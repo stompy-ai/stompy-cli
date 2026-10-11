@@ -52,7 +52,11 @@ func NewClient(baseURL, authToken, version string, verbose bool) *Client {
 func (c *Client) Do(method, path string, body any, params url.Values) ([]byte, int, error) {
 	u := c.BaseURL + path
 	if len(params) > 0 {
-		u += "?" + params.Encode()
+		sep := "?"
+		if strings.Contains(u, "?") { // projectPath may already carry ?owner=
+			sep = "&"
+		}
+		u += sep + params.Encode()
 	}
 
 	var reqBytes []byte
@@ -297,5 +301,5 @@ func (c *Client) DeleteWithResult(path string, params url.Values, result any) er
 // the only plaintext copy of a minted secret (STOMPY-2705), so --verbose must
 // never preview it.
 func isKeyMint(method, path string) bool {
-	return method == http.MethodPost && strings.HasSuffix(path, "/api-key")
+	return method == http.MethodPost && strings.HasSuffix(strings.SplitN(path, "?", 2)[0], "/api-key")
 }

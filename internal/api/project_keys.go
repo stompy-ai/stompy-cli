@@ -1,8 +1,6 @@
 package api
 
 import (
-	"fmt"
-	"net/url"
 	"time"
 )
 
@@ -38,7 +36,7 @@ type SharedProjectResponse struct {
 }
 
 func projectKeyPath(project string) string {
-	return fmt.Sprintf("/projects/%s/api-key", url.PathEscape(project))
+	return projectPath(project, "/api-key")
 }
 
 // MintProjectKey mints the project's key. If one is active this ROTATES it.
@@ -64,7 +62,7 @@ func (c *Client) RevokeProjectKey(project string) error {
 
 func (c *Client) RequestProjectKey(project string) (*ProjectKeyRequestResponse, error) {
 	var resp ProjectKeyRequestResponse
-	if err := c.Post(projectKeyPath(project)+"/request", nil, &resp); err != nil {
+	if err := c.Post(projectPath(project, "/api-key/request"), nil, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil

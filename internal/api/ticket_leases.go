@@ -2,7 +2,6 @@ package api
 
 import (
 	"fmt"
-	"net/url"
 )
 
 type LeaseHolder struct {
@@ -32,15 +31,7 @@ func (c *Client) LeaseTicket(project, action string, id int, request TicketLease
 	default:
 		return nil, fmt.Errorf("unknown lease action: %s", action)
 	}
-	params := url.Values{}
-	if owner, name, qualified := splitOwner(project); qualified {
-		params.Set("owner", owner)
-		project = name
-	}
-	path := fmt.Sprintf("/projects/%s/tickets/%s", url.PathEscape(project), suffix)
-	if len(params) > 0 {
-		path += "?" + params.Encode()
-	}
+	path := projectPath(project, fmt.Sprintf("/tickets/%s", suffix))
 	var response TicketLeaseResponse
 	if err := c.Post(path, request, &response); err != nil {
 		return nil, err

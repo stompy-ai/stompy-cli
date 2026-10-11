@@ -153,7 +153,7 @@ func (c *Client) ListTickets(project string, status, ticketType, priority string
 		params.Set("offset", strconv.Itoa(offset))
 	}
 	var resp TicketListResponse
-	if err := c.Get(fmt.Sprintf("/projects/%s/tickets", url.PathEscape(project)), params, &resp); err != nil {
+	if err := c.Get(projectPath(project, "/tickets"), params, &resp); err != nil {
 		return nil, err
 	}
 	if status != "" {
@@ -171,7 +171,7 @@ func (c *Client) ListTickets(project string, status, ticketType, priority string
 
 func (c *Client) GetTicket(project string, id int) (*TicketResponse, error) {
 	var resp TicketResponse
-	if err := c.Get(fmt.Sprintf("/projects/%s/tickets/%d", url.PathEscape(project), id), nil, &resp); err != nil {
+	if err := c.Get(projectPath(project, fmt.Sprintf("/tickets/%d", id)), nil, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -179,7 +179,7 @@ func (c *Client) GetTicket(project string, id int) (*TicketResponse, error) {
 
 func (c *Client) CreateTicket(project string, req TicketCreate) (*TicketResponse, error) {
 	var resp TicketResponse
-	if err := c.Post(fmt.Sprintf("/projects/%s/tickets", url.PathEscape(project)), req, &resp); err != nil {
+	if err := c.Post(projectPath(project, "/tickets"), req, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -187,7 +187,7 @@ func (c *Client) CreateTicket(project string, req TicketCreate) (*TicketResponse
 
 func (c *Client) UpdateTicket(project string, id int, req TicketUpdate) (*TicketResponse, error) {
 	var resp TicketResponse
-	if err := c.Put(fmt.Sprintf("/projects/%s/tickets/%d", url.PathEscape(project), id), req, &resp); err != nil {
+	if err := c.Put(projectPath(project, fmt.Sprintf("/tickets/%d", id)), req, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -196,7 +196,7 @@ func (c *Client) UpdateTicket(project string, id int, req TicketUpdate) (*Ticket
 func (c *Client) TransitionTicket(project string, id int, status string) (*TicketResponse, error) {
 	body := TransitionRequest{Status: status}
 	var resp TicketResponse
-	if err := c.Post(fmt.Sprintf("/projects/%s/tickets/%d/move", url.PathEscape(project), id), body, &resp); err != nil {
+	if err := c.Post(projectPath(project, fmt.Sprintf("/tickets/%d/move", id)), body, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -205,7 +205,7 @@ func (c *Client) TransitionTicket(project string, id int, status string) (*Ticke
 // CloseTicket delegates terminal status and transition ordering to the server.
 func (c *Client) CloseTicket(project string, id int) (*TicketResponse, error) {
 	var resp TicketResponse
-	if err := c.Post(fmt.Sprintf("/projects/%s/tickets/%d/close", url.PathEscape(project), id), nil, &resp); err != nil {
+	if err := c.Post(projectPath(project, fmt.Sprintf("/tickets/%d/close", id)), nil, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -224,7 +224,7 @@ func (c *Client) SearchTickets(project, query string, ticketType, status string,
 		params.Set("limit", strconv.Itoa(limit))
 	}
 	var resp TicketSearchResponse
-	if err := c.Get(fmt.Sprintf("/projects/%s/tickets/search", url.PathEscape(project)), params, &resp); err != nil {
+	if err := c.Get(projectPath(project, "/tickets/search"), params, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -242,7 +242,7 @@ func (c *Client) GetBoard(project string, view, ticketType, status string) (*Boa
 		params.Set("status", status)
 	}
 	var resp BoardView
-	if err := c.Get(fmt.Sprintf("/projects/%s/tickets/board", url.PathEscape(project)), params, &resp); err != nil {
+	if err := c.Get(projectPath(project, "/tickets/board"), params, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -250,7 +250,7 @@ func (c *Client) GetBoard(project string, view, ticketType, status string) (*Boa
 
 func (c *Client) AddLink(project string, ticketID int, req LinkCreate) (*TicketLinkResp, error) {
 	var resp TicketLinkResp
-	if err := c.Post(fmt.Sprintf("/projects/%s/tickets/%d/links", url.PathEscape(project), ticketID), req, &resp); err != nil {
+	if err := c.Post(projectPath(project, fmt.Sprintf("/tickets/%d/links", ticketID)), req, &resp); err != nil {
 		return nil, err
 	}
 	return &resp, nil
@@ -258,7 +258,7 @@ func (c *Client) AddLink(project string, ticketID int, req LinkCreate) (*TicketL
 
 func (c *Client) ListLinks(project string, ticketID int) ([]TicketLinkResp, error) {
 	var resp []TicketLinkResp
-	if err := c.Get(fmt.Sprintf("/projects/%s/tickets/%d/links", url.PathEscape(project), ticketID), nil, &resp); err != nil {
+	if err := c.Get(projectPath(project, fmt.Sprintf("/tickets/%d/links", ticketID)), nil, &resp); err != nil {
 		return nil, err
 	}
 	// STOMPY-2527: the server's link row is fetched with a UNION of two
@@ -276,5 +276,5 @@ func (c *Client) ListLinks(project string, ticketID int) ([]TicketLinkResp, erro
 }
 
 func (c *Client) RemoveLink(project string, ticketID, linkID int) error {
-	return c.Delete(fmt.Sprintf("/projects/%s/tickets/%d/links/%d", url.PathEscape(project), ticketID, linkID), nil)
+	return c.Delete(projectPath(project, fmt.Sprintf("/tickets/%d/links/%d", ticketID, linkID)), nil)
 }
