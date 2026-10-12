@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	maxRetries   = 2
+	maxRetries     = 2
 	retryBaseDelay = 1 * time.Second
 )
 
@@ -117,7 +117,7 @@ func (c *Client) Do(method, path string, body any, params url.Values) ([]byte, i
 			req.Header.Set("Cache-Control", "no-cache")
 		}
 
-		if body != nil && (method == http.MethodPost || method == http.MethodPut) {
+		if body != nil && (method == http.MethodPost || method == http.MethodPut || method == http.MethodPatch) {
 			req.Header.Set("Content-Type", "application/json")
 		}
 
@@ -266,6 +266,21 @@ func (c *Client) Post(path string, body any, result any) error {
 
 func (c *Client) Put(path string, body any, result any) error {
 	data, _, err := c.Do(http.MethodPut, path, body, nil)
+	if err != nil {
+		return err
+	}
+	if result != nil {
+		if err := json.Unmarshal(data, result); err != nil {
+			return fmt.Errorf("decoding response: %w", err)
+		}
+	}
+	return nil
+}
+
+// Patch sends a PATCH once (it is not in isIdempotent: a merge write is never
+// replayed by the retry loop) and decodes the JSON response.
+func (c *Client) Patch(path string, body any, result any) error {
+	data, _, err := c.Do(http.MethodPatch, path, body, nil)
 	if err != nil {
 		return err
 	}
