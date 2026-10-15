@@ -78,16 +78,16 @@ var ticketLinkListCmd = &cobra.Command{
 		}
 
 		f := getFormatter()
-		headers := []string{"LINK ID", "TYPE", "TARGET ID", "TARGET TITLE", "TARGET STATUS"}
+		// json/yaml: pass the server's fields through (peer_*, direction,
+		// relation, source_*/target_*) instead of flattening to columns.
+		if of := getOutputFormat(); of == "json" || of == "yaml" {
+			fmt.Print(f.FormatRaw(links))
+			return nil
+		}
+		headers := []string{"LINK ID", "RELATION", "TICKET", "TITLE", "STATUS", "DIRECTION"}
 		var rows [][]string
 		for _, l := range links {
-			rows = append(rows, []string{
-				fmt.Sprintf("%d", l.ID),
-				l.LinkType,
-				fmt.Sprintf("%d", l.TargetID),
-				l.TargetTitle,
-				l.TargetStatus,
-			})
+			rows = append(rows, linkRow(l))
 		}
 
 		fmt.Print(f.FormatTable(headers, rows))
@@ -131,4 +131,22 @@ func init() {
 	ticketLinkCmd.AddCommand(ticketLinkListCmd)
 	ticketLinkCmd.AddCommand(ticketLinkRemoveCmd)
 	ticketCmd.AddCommand(ticketLinkCmd)
+}
+
+// linkRow renders the counterpart end of a link. Backends >= 0.8.13 send
+// peer_*; for older ones it falls back to the (ListLinks-normalized)
+// target id and prints title/status only when they are known to describe it.
+func linkRow(l api.TicketLinkResp) []string {
+	if l.PeerID != 0 {
+		rel := l.Relation
+		if rel == "" {
+			rel = l.LinkType
+		}
+		return []string{fmt.Sprintf("%d", l.ID), rel, fmt.Sprintf("%d", l.PeerID), l.PeerTitle, l.PeerStatus, l.Direction}
+	}
+	title, status := l.TargetTitle, l.TargetStatus
+	if l.LegacyReversed {
+		title, status = "", ""
+	}
+	return []string{fmt.Sprintf("%d", l.ID), l.LinkType, fmt.Sprintf("%d", l.TargetID), title, status, ""}
 }
