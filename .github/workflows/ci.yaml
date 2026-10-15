@@ -19,3 +19,12 @@ jobs:
       - run: go build ./...
 
       - run: go test ./... -count=1 -timeout=120s
+
+      # STOMPY-2811: shrink-only file-size and clone ratchets (twin of the backend
+      # STOMPY-1371 / STOMPY-1808 gates; policy in ratchet_config.json).
+      - name: Ratchet gate self-test
+        run: python3 -m unittest scripts/test_ratchet.py
+      - name: File-size ratchet
+        run: python3 scripts/ratchet.py size
+      - name: Code-clone ratchet (jscpd 5.1.0, pinned)
+        run: python3 scripts/ratchet.py clones
