@@ -142,7 +142,7 @@ func linkRow(l api.TicketLinkResp) []string {
 		if rel == "" {
 			rel = l.LinkType
 		}
-		return []string{fmt.Sprintf("%d", l.ID), rel, "-", fmt.Sprintf("%s@%d", l.ContextLabel, l.ContextVersion), "-", l.Direction}
+		return []string{fmt.Sprintf("%d", l.ID), rel, "-", fmt.Sprintf("%s@%s", l.ContextLabel, l.ContextVersion), "-", l.Direction}
 	}
 	if l.PeerID != 0 {
 		rel := l.Relation
