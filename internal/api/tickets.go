@@ -137,11 +137,11 @@ type TicketLinkResp struct {
 	// stompy-ticketing 0.8.14 (STOMPY-2858): Kind is "ticket" or "context";
 	// empty (older backend) means ticket. Context rows carry TicketID,
 	// ContextLabel and ContextVersion instead of source/target/peer ids.
-	Kind           string `json:"kind,omitempty"`
-	TicketID       int    `json:"ticket_id,omitempty"`
-	ContextLabel   string `json:"context_label,omitempty"`
-	ContextVersion int    `json:"context_version,omitempty"`
-	CreatedAt      string `json:"created_at,omitempty"`
+	Kind           string   `json:"kind,omitempty"`
+	TicketID       int      `json:"ticket_id,omitempty"`
+	ContextLabel   string   `json:"context_label,omitempty"`
+	ContextVersion string   `json:"context_version,omitempty"` // "latest" or a version string
+	CreatedAt      *float64 `json:"created_at,omitempty"`      // epoch seconds, as the server sends it
 
 	// LegacyReversed marks an old-backend row whose ids ListLinks swapped;
 	// its target_title/target_status then do not describe the counterpart.

@@ -108,11 +108,11 @@ func TestLinkListJSONIncludesPeerFields(t *testing.T) {
 // STOMPY-2858: stompy-ticketing 0.8.14 adds context rows (kind="context").
 const linksMixedKinds = `[
  {"kind":"ticket","id":10,"source_id":1,"target_id":2,"link_type":"blocks",
-  "created_at":"2026-10-01T00:00:00Z",
+  "created_at":1792143289.62,
   "peer_id":2,"peer_title":"Beta blocked","peer_status":"backlog",
   "direction":"outgoing","relation":"blocks"},
  {"kind":"context","id":11,"ticket_id":1,"context_label":"release_failure_vectors",
-  "context_version":3,"link_type":"relates_to","created_at":"2026-10-02T00:00:00Z",
+  "context_version":"3","link_type":"relates_to","created_at":1792143300.5,
   "direction":"outgoing","relation":"relates_to",
   "source_id":null,"target_id":null,"peer_id":null,"peer_title":null,"peer_status":null}]`
 
@@ -141,7 +141,7 @@ func TestLinkListContextRowRendersLabelAtVersion(t *testing.T) {
 }
 
 func TestLinkListTicketRowUnchangedWithKindField(t *testing.T) {
-	withKind := strings.Replace(linksNewShape, `{"id":10`, `{"kind":"ticket","created_at":"2026-10-01T00:00:00Z","id":10`, 1)
+	withKind := strings.Replace(linksNewShape, `{"id":10`, `{"kind":"ticket","created_at":1792143289.62,"id":10`, 1)
 	if a, b := runLinkList(t, "1", withKind, "table"), runLinkList(t, "1", linksNewShape, "table"); a != b {
 		t.Errorf("ticket row output changed by kind field:\n%s\nvs\n%s", a, b)
 	}
@@ -149,7 +149,7 @@ func TestLinkListTicketRowUnchangedWithKindField(t *testing.T) {
 
 func TestLinkListJSONPassesContextRowThrough(t *testing.T) {
 	out := runLinkList(t, "1", linksMixedKinds, "json")
-	for _, want := range []string{`"kind": "context"`, `"kind": "ticket"`, `"context_label": "release_failure_vectors"`, `"context_version": 3`, `"ticket_id": 1`} {
+	for _, want := range []string{`"kind": "context"`, `"kind": "ticket"`, `"context_label": "release_failure_vectors"`, `"context_version": "3"`, `"ticket_id": 1`} {
 		if !strings.Contains(out, want) {
 			t.Errorf("json missing %s in:\n%s", want, out)
 		}
