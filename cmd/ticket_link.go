@@ -137,6 +137,13 @@ func init() {
 // peer_*; for older ones it falls back to the (ListLinks-normalized)
 // target id and prints title/status only when they are known to describe it.
 func linkRow(l api.TicketLinkResp) []string {
+	if l.Kind == "context" {
+		rel := l.Relation
+		if rel == "" {
+			rel = l.LinkType
+		}
+		return []string{fmt.Sprintf("%d", l.ID), rel, "-", fmt.Sprintf("%s@%d", l.ContextLabel, l.ContextVersion), "-", l.Direction}
+	}
 	if l.PeerID != 0 {
 		rel := l.Relation
 		if rel == "" {

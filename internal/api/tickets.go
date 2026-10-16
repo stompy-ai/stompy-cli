@@ -118,8 +118,8 @@ type LinkCreate struct {
 
 type TicketLinkResp struct {
 	ID           int    `json:"id"`
-	SourceID     int    `json:"source_id"`
-	TargetID     int    `json:"target_id"`
+	SourceID     int    `json:"source_id,omitempty"`
+	TargetID     int    `json:"target_id,omitempty"`
 	LinkType     string `json:"link_type"`
 	TargetTitle  string `json:"target_title,omitempty"`
 	TargetStatus string `json:"target_status,omitempty"`
@@ -128,11 +128,20 @@ type TicketLinkResp struct {
 	// PeerID == 0 means an older backend that did not send them.
 	SourceTitle  string `json:"source_title,omitempty"`
 	SourceStatus string `json:"source_status,omitempty"`
-	PeerID       int    `json:"peer_id,omitempty"`
+	PeerID       int    `json:"peer_id,omitempty"` // null (context rows) decodes to 0
 	PeerTitle    string `json:"peer_title,omitempty"`
 	PeerStatus   string `json:"peer_status,omitempty"`
 	Direction    string `json:"direction,omitempty"`
 	Relation     string `json:"relation,omitempty"`
+
+	// stompy-ticketing 0.8.14 (STOMPY-2858): Kind is "ticket" or "context";
+	// empty (older backend) means ticket. Context rows carry TicketID,
+	// ContextLabel and ContextVersion instead of source/target/peer ids.
+	Kind           string `json:"kind,omitempty"`
+	TicketID       int    `json:"ticket_id,omitempty"`
+	ContextLabel   string `json:"context_label,omitempty"`
+	ContextVersion int    `json:"context_version,omitempty"`
+	CreatedAt      string `json:"created_at,omitempty"`
 
 	// LegacyReversed marks an old-backend row whose ids ListLinks swapped;
 	// its target_title/target_status then do not describe the counterpart.
@@ -283,7 +292,7 @@ func (c *Client) ListLinks(project string, ticketID int) ([]TicketLinkResp, erro
 	// ticket, regardless of which side of the link we queried from.
 	for i := range resp {
 		// STOMPY-2847: rows with peer_* are already viewer-relative.
-		if resp[i].PeerID == 0 && resp[i].TargetID == ticketID {
+		if resp[i].Kind != "context" && resp[i].PeerID == 0 && resp[i].TargetID == ticketID {
 			resp[i].LegacyReversed = true
 			resp[i].SourceID, resp[i].TargetID = resp[i].TargetID, resp[i].SourceID
 		}

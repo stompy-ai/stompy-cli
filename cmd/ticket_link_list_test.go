@@ -104,3 +104,61 @@ func TestLinkListJSONIncludesPeerFields(t *testing.T) {
 		}
 	}
 }
+
+// STOMPY-2858: stompy-ticketing 0.8.14 adds context rows (kind="context").
+const linksMixedKinds = `[
+ {"kind":"ticket","id":10,"source_id":1,"target_id":2,"link_type":"blocks",
+  "created_at":"2026-10-01T00:00:00Z",
+  "peer_id":2,"peer_title":"Beta blocked","peer_status":"backlog",
+  "direction":"outgoing","relation":"blocks"},
+ {"kind":"context","id":11,"ticket_id":1,"context_label":"release_failure_vectors",
+  "context_version":3,"link_type":"relates_to","created_at":"2026-10-02T00:00:00Z",
+  "direction":"outgoing","relation":"relates_to",
+  "source_id":null,"target_id":null,"peer_id":null,"peer_title":null,"peer_status":null}]`
+
+func TestLinkListContextRowRendersLabelAtVersion(t *testing.T) {
+	out := runLinkList(t, "1", linksMixedKinds, "table")
+	var ctxLine string
+	for _, ln := range strings.Split(out, "\n") {
+		if strings.Contains(ln, "release_failure_vectors@3") {
+			ctxLine = ln
+		}
+	}
+	if ctxLine == "" {
+		t.Fatalf("context row not rendered as label@version:\n%s", out)
+	}
+	for _, want := range []string{"11", "relates_to", "outgoing"} {
+		if !strings.Contains(ctxLine, want) {
+			t.Errorf("context row missing %q: %q", want, ctxLine)
+		}
+	}
+	if strings.Contains(ctxLine, " 0 ") {
+		t.Errorf("context row leaked a zero ticket id: %q", ctxLine)
+	}
+	if !strings.Contains(out, "Beta blocked") {
+		t.Errorf("ticket row lost in mixed output:\n%s", out)
+	}
+}
+
+func TestLinkListTicketRowUnchangedWithKindField(t *testing.T) {
+	withKind := strings.Replace(linksNewShape, `{"id":10`, `{"kind":"ticket","created_at":"2026-10-01T00:00:00Z","id":10`, 1)
+	if a, b := runLinkList(t, "1", withKind, "table"), runLinkList(t, "1", linksNewShape, "table"); a != b {
+		t.Errorf("ticket row output changed by kind field:\n%s\nvs\n%s", a, b)
+	}
+}
+
+func TestLinkListJSONPassesContextRowThrough(t *testing.T) {
+	out := runLinkList(t, "1", linksMixedKinds, "json")
+	for _, want := range []string{`"kind": "context"`, `"kind": "ticket"`, `"context_label": "release_failure_vectors"`, `"context_version": 3`, `"ticket_id": 1`} {
+		if !strings.Contains(out, want) {
+			t.Errorf("json missing %s in:\n%s", want, out)
+		}
+	}
+}
+
+func TestLinkListOldServerNoKindTreatedAsTicket(t *testing.T) {
+	out := runLinkList(t, "1", linksNewShape, "table")
+	if !strings.Contains(out, "Beta blocked") || strings.Contains(out, "@") {
+		t.Errorf("no-kind row not treated as ticket:\n%s", out)
+	}
+}
