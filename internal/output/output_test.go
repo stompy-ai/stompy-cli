@@ -186,3 +186,28 @@ func TestYAMLFormatter_FormatRaw(t *testing.T) {
 		t.Errorf("FormatRaw YAML missing 'raw-value', got:\n%s", result)
 	}
 }
+
+// STOMPY-2863: a single-object view (context recall, ticket get, ...) must
+// never cut a value; truncation belongs to list tables only.
+func TestTableFormatter_FormatSingle_NeverTruncates(t *testing.T) {
+	f := &TableFormatter{}
+	content := "tinyqueue releases MUST follow semver. MUST NOT publish to PyPI from a laptop; " +
+		"only the GitHub Actions release workflow publishes. " + strings.Repeat("Tags and changelog are cut by the release workflow. ", 600)
+	result := f.FormatSingle([]KeyValue{{Key: "Topic", Value: "release_policy"}, {Key: "Content", Value: content}})
+	if !strings.Contains(result, content) {
+		t.Errorf("FormatSingle cut the value: got %d bytes for %d-byte content", len(result), len(content))
+	}
+}
+
+// STOMPY-2868: the full UUID must sit on one line so it can be copied.
+func TestTableFormatter_FormatTable_IDColumnNotWrapped(t *testing.T) {
+	f := &TableFormatter{}
+	id := "3f2b8c1e-9d47-4a6b-8e15-0c7d2a9b4f61"
+	result := f.FormatTable(
+		[]string{"ID", "ITEM A", "ITEM B", "TYPE", "CONFIDENCE", "STATUS"},
+		[][]string{{id, "context #101", "context #202", "direct_contradiction", "0.92", "pending"}},
+	)
+	if !strings.Contains(result, id) {
+		t.Errorf("ID column wrapped or cut the UUID:\n%s", result)
+	}
+}

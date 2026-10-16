@@ -101,7 +101,9 @@ func colMaxWidth(header string, numCols, termWidth int) int {
 		}
 		return w
 	case "ID", "LINK ID":
-		return 6
+		// Full UUID (36) must stay on one line so it can be copied
+		// (STOMPY-2868); other columns shrink instead.
+		return 36
 	case "ROLE", "TYPE":
 		return 10
 	case "STATUS", "PRIORITY":
@@ -132,18 +134,11 @@ func (f *TableFormatter) FormatSingle(fields []KeyValue) string {
 		}
 	}
 
-	termWidth := getTerminalWidth()
-	valueWidth := termWidth - maxKey - 4
-	if valueWidth < 20 {
-		valueWidth = 20
-	}
-
 	var buf strings.Builder
 	for _, kv := range fields {
 		val := kv.Value
-		if len(val) > valueWidth {
-			val = val[:valueWidth-3] + "..."
-		}
+		// Never truncate: a single-object view is the read-the-whole-thing
+		// path (STOMPY-2863); the terminal wraps long values.
 		// Key in teal, value in default
 		key := colorTeal.Sprint(fmt.Sprintf("%-*s", maxKey+1, kv.Key+":"))
 		fmt.Fprintf(&buf, "%s  %s\n", key, val)
