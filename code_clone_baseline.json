@@ -1,0 +1,92 @@
+{
+ "cmd/bug.go::cmd/conflict.go::beeea33bb90c3dda": {
+  "files": [
+   "cmd/bug.go",
+   "cmd/conflict.go"
+  ],
+  "count": 1,
+  "lines": 10,
+  "tokens": 80
+ },
+ "cmd/context.go::cmd/context.go::449eb68360a6d848": {
+  "files": [
+   "cmd/context.go",
+   "cmd/context.go"
+  ],
+  "count": 1,
+  "lines": 12,
+  "tokens": 76
+ },
+ "cmd/context.go::cmd/project.go::bf5e06e70ccd7306": {
+  "files": [
+   "cmd/context.go",
+   "cmd/project.go"
+  ],
+  "count": 1,
+  "lines": 13,
+  "tokens": 74
+ },
+ "cmd/ticket.go::cmd/ticket.go::73a4718b16bf6b34": {
+  "files": [
+   "cmd/ticket.go",
+   "cmd/ticket.go"
+  ],
+  "count": 1,
+  "lines": 12,
+  "tokens": 82
+ },
+ "cmd/ticket.go::cmd/ticket.go::8725c16a138a142e": {
+  "files": [
+   "cmd/ticket.go",
+   "cmd/ticket.go"
+  ],
+  "count": 1,
+  "lines": 14,
+  "tokens": 84
+ },
+ "cmd/ticket.go::cmd/ticket.go::e7f7bdeb43d10137": {
+  "files": [
+   "cmd/ticket.go",
+   "cmd/ticket.go"
+  ],
+  "count": 2,
+  "lines": 12,
+  "tokens": 77
+ },
+ "cmd/ticket.go::cmd/ticket_link.go::988cebb9f766a081": {
+  "files": [
+   "cmd/ticket.go",
+   "cmd/ticket_link.go"
+  ],
+  "count": 2,
+  "lines": 12,
+  "tokens": 77
+ },
+ "internal/api/compat.go::internal/update/update.go::25cbcb4f440ccf0f": {
+  "files": [
+   "internal/api/compat.go",
+   "internal/update/update.go"
+  ],
+  "count": 1,
+  "lines": 8,
+  "tokens": 72
+ },
+ "internal/api/compat.go::internal/update/update.go::dc2ed11567bc75d8": {
+  "files": [
+   "internal/api/compat.go",
+   "internal/update/update.go"
+  ],
+  "count": 1,
+  "lines": 24,
+  "tokens": 126
+ },
+ "internal/output/json.go::internal/output/json.go::a862ad6ef35ff81c": {
+  "files": [
+   "internal/output/json.go",
+   "internal/output/json.go"
+  ],
+  "count": 1,
+  "lines": 12,
+  "tokens": 100
+ }
+}
