@@ -362,8 +362,7 @@ var contextExploreCmd = &cobra.Command{
 		if err := mcpClient.CallToolTyped("context_explore", mcpArgs, &resp); err != nil {
 			var raw *api.NonJSONToolResult
 			if errors.As(err, &raw) {
-				fmt.Println(raw.Text) // server-rendered text (STOMPY-1921)
-				return nil
+				return printToolText(raw) // server-rendered text; a refusal exits 1
 			}
 			return err
 		}
@@ -429,8 +428,7 @@ var contextDashboardCmd = &cobra.Command{
 		if err := mcpClient.CallToolTyped("context_dashboard", mcpArgs, &resp); err != nil {
 			var raw *api.NonJSONToolResult
 			if errors.As(err, &raw) {
-				fmt.Println(raw.Text) // server-rendered text (STOMPY-1921)
-				return nil
+				return printToolText(raw) // server-rendered text; a refusal exits 1
 			}
 			return err
 		}
@@ -538,8 +536,7 @@ var contextBatchCmd = &cobra.Command{
 		if err := mcpClient.CallToolTyped("recall_batch", mcpArgs, &resp); err != nil {
 			var raw *api.NonJSONToolResult
 			if errors.As(err, &raw) {
-				fmt.Println(raw.Text) // server-rendered text (STOMPY-1921)
-				return nil
+				return printToolText(raw) // server-rendered text; a refusal exits 1
 			}
 			return err
 		}

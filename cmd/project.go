@@ -229,8 +229,7 @@ var projectBriefCmd = &cobra.Command{
 		if err := mcpClient.CallToolTyped("project_brief", mcpArgs, &resp); err != nil {
 			var raw *api.NonJSONToolResult
 			if errors.As(err, &raw) {
-				fmt.Println(raw.Text) // server-rendered text (STOMPY-1921)
-				return nil
+				return printToolText(raw) // server-rendered text; a refusal exits 1
 			}
 			return err
 		}

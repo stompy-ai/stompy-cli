@@ -187,3 +187,14 @@ func (c *Client) SetContextLifecycle(project, topic string, req ContextLifecycle
 	}
 	return &resp, nil
 }
+
+// GetContextLinks reads a context's typed links both ways
+// (GET /projects/{p}/contexts/{topic}/edges, STOMPY-3125): "links" (outbound)
+// and "cited_by" (inbound), each with topic, link_type, provenance and weight.
+func (c *Client) GetContextLinks(project, topic string) (map[string]any, error) {
+	var resp map[string]any
+	if err := c.Get(projectPath(project, fmt.Sprintf("/contexts/%s/edges", url.PathEscape(topic))), nil, &resp); err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
