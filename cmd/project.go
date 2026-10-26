@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/banton/stompy-cli/internal/api"
 	"github.com/banton/stompy-cli/internal/config"
@@ -154,6 +155,11 @@ var projectDeleteCmd = &cobra.Command{
 	Short: "Delete a project",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		// The name first, as REST orders its gates: a blank name would send
+		// DELETE /projects/ and answer a bare 405 (STOMPY-3168). Same sentence as REST.
+		if strings.TrimSpace(args[0]) == "" {
+			return errors.New("That is not a usable project name.")
+		}
 		confirm, _ := cmd.Flags().GetBool("confirm")
 		if !confirm {
 			return fmt.Errorf("must pass --confirm to delete project %q", args[0])
