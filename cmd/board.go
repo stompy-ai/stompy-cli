@@ -43,6 +43,9 @@ func newBoardCmd() *cobra.Command {
 			return nil
 		}
 		printBoardPost(result.Post)
+		if result.SupersededOtherSession {
+			fmt.Printf("warning: %s\n", result.Notice)
+		}
 		return nil
 	}
 	read := &cobra.Command{Use: "read", Short: "Read relevant board posts and record read evidence", Args: cobra.NoArgs}
