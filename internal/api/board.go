@@ -10,7 +10,7 @@ import (
 type BoardPostRequest struct {
 	Kind       string   `json:"kind"`
 	Body       string   `json:"body"`
-	AgentLabel string   `json:"agent_label,omitempty"`
+	AgentLabel string   `json:"agent_label"`
 	Refs       []string `json:"refs,omitempty"`
 	TTLSeconds *int64   `json:"ttl_seconds,omitempty"`
 }
@@ -34,8 +34,8 @@ type BoardPostResponse struct {
 	Post    BoardPost `json:"post"`
 	// STOMPY-3172: the label the server stored (normalized, or the session's
 	// default), and whether this status replaced another session's live one.
-	AgentLabel             string `json:"agent_label,omitempty"`
-	SupersededOtherSession bool   `json:"superseded_other_session,omitempty"`
+	AgentLabel             string `json:"agent_label"`
+	SupersededOtherSession bool   `json:"superseded_other_session"`
 	Notice                 string `json:"notice,omitempty"`
 }
 
