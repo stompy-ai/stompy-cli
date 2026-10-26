@@ -80,3 +80,38 @@ func TestBoardReadCommandQuotesUntrustedTerminalText(t *testing.T) {
 		t.Fatalf("unsafe or unattributed output: %q", out)
 	}
 }
+
+func TestBoardPostTableShowsTheSupersededSessionNotice(t *testing.T) {
+	notice := "This status replaced a live status that a different session wrote under the same agent_label; give each agent its own agent_label."
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"project":                  "mine",
+			"post":                     map[string]interface{}{"id": 9, "author_id": 101, "agent_label": "astra", "kind": "status", "body": "b"},
+			"agent_label":              "astra",
+			"superseded_other_session": true,
+			"notice":                   notice,
+		})
+	}))
+	defer srv.Close()
+	oldClient, oldProject := apiClient, flagProject
+	apiClient, flagProject = api.NewClient(srv.URL, "tok", "dev", false), "mine"
+	defer func() { apiClient, flagProject = oldClient, oldProject }()
+	command, _, err := newBoardCmd().Find([]string{"post"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err = command.ParseFlags([]string{"--body", "b", "--agent-label", "Astra"}); err != nil {
+		t.Fatal(err)
+	}
+	var out string
+	withOutputFormat("table", func() {
+		out = captureStdout(t, func() {
+			if err = command.RunE(command, nil); err != nil {
+				t.Error(err)
+			}
+		})
+	})
+	if !strings.Contains(out, `agent:"astra"`) || !strings.Contains(out, "warning: "+notice) {
+		t.Fatalf("superseded notice hidden in table output: %q", out)
+	}
+}

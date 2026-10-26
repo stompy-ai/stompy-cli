@@ -32,6 +32,11 @@ type BoardPost struct {
 type BoardPostResponse struct {
 	Project string    `json:"project"`
 	Post    BoardPost `json:"post"`
+	// STOMPY-3172: the label the server stored (normalized, or the session's
+	// default), and whether this status replaced another session's live one.
+	AgentLabel             string `json:"agent_label,omitempty"`
+	SupersededOtherSession bool   `json:"superseded_other_session,omitempty"`
+	Notice                 string `json:"notice,omitempty"`
 }
 
 type BoardReadResponse struct {
