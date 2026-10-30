@@ -23,6 +23,8 @@ type TicketUpdate struct {
 	Priority    *string  `json:"priority,omitempty"`
 	Assignee    *string  `json:"assignee,omitempty"`
 	Tags        []string `json:"tags,omitempty"`
+	// STOMPY-3247: opt in to REPLACE a non-empty description (STOMPY-2394).
+	Confirm bool `json:"confirm,omitempty"`
 }
 
 type TicketResponse struct {
