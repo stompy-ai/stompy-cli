@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -182,6 +183,11 @@ var ticketUpdateCmd = &cobra.Command{
 
 		resp, err := apiClient.UpdateTicket(project, id, req)
 		if err != nil {
+			// STOMPY-3247: the server names the REST opt-in; the CLI's is the flag.
+			var apiErr *api.APIError
+			if errors.As(err, &apiErr) && apiErr.ErrorCode == "DESCRIPTION_WOULD_REPLACE" {
+				return fmt.Errorf("%w\nRe-run with --confirm to replace the description, or pass the stored text extended", err)
+			}
 			return err
 		}
 
