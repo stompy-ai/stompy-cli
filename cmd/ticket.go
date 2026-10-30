@@ -178,6 +178,7 @@ var ticketUpdateCmd = &cobra.Command{
 			}
 			req.Tags = tags
 		}
+		req.Confirm, _ = cmd.Flags().GetBool("confirm")
 
 		resp, err := apiClient.UpdateTicket(project, id, req)
 		if err != nil {
@@ -402,7 +403,8 @@ func init() {
 	ticketGetCmd.Flags()
 
 	ticketUpdateCmd.Flags().String("title", "", "New title")
-	ticketUpdateCmd.Flags().String("description", "", "New description")
+	ticketUpdateCmd.Flags().String("description", "", "New description (REPLACES the body; refused unless it keeps the stored text or --confirm is set)")
+	ticketUpdateCmd.Flags().Bool("confirm", false, "Allow --description to replace a non-empty description")
 	ticketUpdateCmd.Flags().String("priority", "", "New priority")
 	ticketUpdateCmd.Flags().String("assignee", "", "New assignee")
 	ticketUpdateCmd.Flags().String("tags", "", "New comma-separated tags")
