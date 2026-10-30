@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/banton/stompy-cli/internal/api"
@@ -43,6 +45,9 @@ func newBoardCmd() *cobra.Command {
 			return nil
 		}
 		printBoardPost(result.Post)
+		if result.Notice != "" {
+			fmt.Fprintf(os.Stderr, "notice: %s\n", result.Notice)
+		}
 		return nil
 	}
 	read := &cobra.Command{Use: "read", Short: "Read relevant board posts and record read evidence", Args: cobra.NoArgs}
@@ -84,7 +89,33 @@ func newBoardCmd() *cobra.Command {
 
 func printBoardPost(post api.BoardPost) {
 	// Quote all caller-controlled text: terminal escapes and newlines are data.
-	fmt.Printf("#%d account:%d agent:%q (%q, %s): %q\n", post.ID, post.AuthorID, post.AgentLabel, post.Kind, post.CreatedAt.Format(time.RFC3339), post.Body)
+	fmt.Printf("#%d account:%d agent:%q (%q, %s)%s: %q\n", post.ID, post.AuthorID, post.AgentLabel, post.Kind, post.CreatedAt.Format(time.RFC3339), boardAuthor(post), post.Body)
+}
+
+// boardAuthor renders ` by "name" (role, kind[, you])`, or "" for an older
+// server that sends no author fields.
+func boardAuthor(post api.BoardPost) string {
+	var tags []string
+	if post.AuthorRole != nil && *post.AuthorRole != "" {
+		tags = append(tags, *post.AuthorRole)
+	}
+	if post.AuthorKind != "" {
+		tags = append(tags, post.AuthorKind)
+	}
+	if post.IsCaller != nil && *post.IsCaller {
+		tags = append(tags, "you")
+	}
+	name := ""
+	if post.AuthorName != nil && *post.AuthorName != "" {
+		name = fmt.Sprintf(" %q", *post.AuthorName)
+	}
+	if name == "" && len(tags) == 0 {
+		return ""
+	}
+	if len(tags) == 0 {
+		return " by" + name
+	}
+	return " by" + name + " (" + strings.Join(tags, ", ") + ")"
 }
 
 func init() { rootCmd.AddCommand(newBoardCmd()) }
