@@ -27,11 +27,29 @@ type BoardPost struct {
 	LastReadAt *time.Time `json:"last_read_at,omitempty"`
 	ReadCount  int64      `json:"read_count"`
 	Weight     float64    `json:"weight"`
+	// Read evidence by kind (STOMPY-3182) and supersession; absent from older servers.
+	SupersededAt   *time.Time `json:"superseded_at,omitempty"`
+	DeliveredCount *int64     `json:"delivered_count,omitempty"`
+	ViewedCount    *int64     `json:"viewed_count,omitempty"`
+	LastViewedAt   *time.Time `json:"last_viewed_at,omitempty"`
+	// Author fields (STOMPY-3178), set by the server. Name and role are null when
+	// the server could not resolve them, so they keep their null in JSON.
+	// minimal: an older server's answer also renders them as null here; revisit
+	// only if a script needs to tell "older server" from "unresolved".
+	AuthorKind string  `json:"author_kind,omitempty"`
+	AuthorName *string `json:"author_name"`
+	AuthorRole *string `json:"author_role"`
+	IsCaller   *bool   `json:"is_caller,omitempty"`
 }
 
 type BoardPostResponse struct {
 	Project string    `json:"project"`
 	Post    BoardPost `json:"post"`
+	// The status-slot answer (STOMPY-3172): the label the post landed under, and
+	// a notice when it replaced a live status this door cannot attribute.
+	AgentLabel             *string `json:"agent_label,omitempty"`
+	SupersededOtherSession *bool   `json:"superseded_other_session,omitempty"`
+	Notice                 string  `json:"notice,omitempty"`
 }
 
 type BoardReadResponse struct {
