@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/banton/stompy-cli/internal/api"
-	"github.com/banton/stompy-cli/internal/config"
 	"github.com/spf13/viper"
+	"github.com/stompy-ai/stompy-cli/internal/api"
+	"github.com/stompy-ai/stompy-cli/internal/config"
 )
 
 // STOMPY-1967 item 1: the mutating commands (ticket create/update, context

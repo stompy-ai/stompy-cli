@@ -7,8 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/banton/stompy-cli/internal/repomarker"
 	"github.com/spf13/cobra"
+	"github.com/stompy-ai/stompy-cli/internal/repomarker"
 )
 
 // exitError carries a specific process exit code out of a command (Execute

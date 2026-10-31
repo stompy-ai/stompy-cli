@@ -5,11 +5,11 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/banton/stompy-cli/internal/api"
-	"github.com/banton/stompy-cli/internal/config"
-	"github.com/banton/stompy-cli/internal/output"
-	"github.com/banton/stompy-cli/internal/update"
 	"github.com/spf13/cobra"
+	"github.com/stompy-ai/stompy-cli/internal/api"
+	"github.com/stompy-ai/stompy-cli/internal/config"
+	"github.com/stompy-ai/stompy-cli/internal/output"
+	"github.com/stompy-ai/stompy-cli/internal/update"
 )
 
 // Version is set at build time via ldflags.

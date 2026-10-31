@@ -3,9 +3,9 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/banton/stompy-cli/internal/output"
-	"github.com/banton/stompy-cli/internal/update"
 	"github.com/spf13/cobra"
+	"github.com/stompy-ai/stompy-cli/internal/output"
+	"github.com/stompy-ai/stompy-cli/internal/update"
 )
 
 var updateCmd = &cobra.Command{

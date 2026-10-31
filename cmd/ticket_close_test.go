@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/banton/stompy-cli/internal/api"
+	"github.com/stompy-ai/stompy-cli/internal/api"
 )
 
 func TestTicketCloseUsesCanonicalClose(t *testing.T) {

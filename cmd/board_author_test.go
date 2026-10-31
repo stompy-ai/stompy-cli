@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/banton/stompy-cli/internal/api"
+	"github.com/stompy-ai/stompy-cli/internal/api"
 )
 
 // Recorded shapes of the server's board answers after STOMPY-3172/3178/3182

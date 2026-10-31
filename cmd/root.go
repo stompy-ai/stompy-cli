@@ -7,12 +7,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/banton/stompy-cli/internal/api"
-	"github.com/banton/stompy-cli/internal/auth"
-	"github.com/banton/stompy-cli/internal/config"
-	"github.com/banton/stompy-cli/internal/output"
-	"github.com/banton/stompy-cli/internal/update"
 	"github.com/spf13/cobra"
+	"github.com/stompy-ai/stompy-cli/internal/api"
+	"github.com/stompy-ai/stompy-cli/internal/auth"
+	"github.com/stompy-ai/stompy-cli/internal/config"
+	"github.com/stompy-ai/stompy-cli/internal/output"
+	"github.com/stompy-ai/stompy-cli/internal/update"
 )
 
 var (
@@ -23,9 +23,9 @@ var (
 	flagVerbose    bool
 	flagUseStaging bool
 
-	apiClient        *api.Client
-	mcpClient        *api.MCPClient
-	updateAvailable  = make(chan string, 1)
+	apiClient       *api.Client
+	mcpClient       *api.MCPClient
+	updateAvailable = make(chan string, 1)
 )
 
 var rootCmd = &cobra.Command{

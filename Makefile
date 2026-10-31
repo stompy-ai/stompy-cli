@@ -1,5 +1,5 @@
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
-LDFLAGS := -ldflags "-X github.com/banton/stompy-cli/cmd.Version=$(VERSION)"
+LDFLAGS := -ldflags "-X github.com/stompy-ai/stompy-cli/cmd.Version=$(VERSION)"
 BINARY := stompy
 
 .PHONY: build install test test-coverage lint build-all clean

@@ -5,8 +5,8 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/banton/stompy-cli/internal/output"
 	"github.com/spf13/cobra"
+	"github.com/stompy-ai/stompy-cli/internal/output"
 )
 
 // searchRoute maps each flag to the GET /projects/{name}/search query

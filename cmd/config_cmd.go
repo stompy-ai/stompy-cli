@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/banton/stompy-cli/internal/config"
-	"github.com/banton/stompy-cli/internal/output"
 	"github.com/spf13/cobra"
+	"github.com/stompy-ai/stompy-cli/internal/config"
+	"github.com/stompy-ai/stompy-cli/internal/output"
 )
 
 var configCmd = &cobra.Command{

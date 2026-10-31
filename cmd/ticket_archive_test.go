@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/banton/stompy-cli/internal/api"
+	"github.com/stompy-ai/stompy-cli/internal/api"
 )
 
 // STOMPY-2223: the server moved the REST UNIT_CAP_REACHED refusal onto the
