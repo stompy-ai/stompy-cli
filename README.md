@@ -33,6 +33,12 @@ sudo mv stompy /usr/local/bin/
 
 Or download manually from the [Releases](https://github.com/stompy-ai/stompy-cli/releases) page.
 
+### Go Install
+
+```bash
+go install github.com/stompy-ai/stompy-cli/cmd/stompy@latest   # → $(go env GOPATH)/bin/stompy
+```
+
 ### Build from Source
 
 Requires Go 1.21+:

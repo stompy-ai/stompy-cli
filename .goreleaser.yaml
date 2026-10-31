@@ -3,7 +3,9 @@ version: 2
 project_name: stompy
 
 builds:
-  - env:
+  - main: ./cmd/stompy
+    binary: stompy
+    env:
       - CGO_ENABLED=0
     goos:
       - darwin
