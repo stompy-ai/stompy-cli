@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/banton/stompy-cli/internal/api"
+	"github.com/stompy-ai/stompy-cli/internal/api"
 )
 
 // STOMPY-3247 item 3: the server's refusal names the REST opt-in ("confirm": true in the

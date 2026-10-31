@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/banton/stompy-cli/internal/api"
-	"github.com/banton/stompy-cli/internal/config"
-	"github.com/banton/stompy-cli/internal/repomarker"
 	"github.com/spf13/cobra"
+	"github.com/stompy-ai/stompy-cli/internal/api"
+	"github.com/stompy-ai/stompy-cli/internal/config"
+	"github.com/stompy-ai/stompy-cli/internal/repomarker"
 )
 
 // checkMarker is loaded in PersistentPreRunE (before auth) so a missing or

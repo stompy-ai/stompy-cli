@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/banton/stompy-cli/internal/config"
+	"github.com/stompy-ai/stompy-cli/internal/config"
 )
 
 // STOMPY-2232 item 2: `stompy whoami` shows usage (units/cap/tier) from

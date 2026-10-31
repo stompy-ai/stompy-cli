@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/banton/stompy-cli/internal/api"
+	"github.com/stompy-ai/stompy-cli/internal/api"
 )
 
 // STOMPY-2847: stompy-ticketing 0.8.13 link rows carry viewer-relative

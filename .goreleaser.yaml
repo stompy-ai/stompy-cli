@@ -3,7 +3,9 @@ version: 2
 project_name: stompy
 
 builds:
-  - env:
+  - main: ./cmd/stompy
+    binary: stompy
+    env:
       - CGO_ENABLED=0
     goos:
       - darwin
@@ -16,7 +18,7 @@ builds:
       - goos: windows
         goarch: arm64
     ldflags:
-      - -s -w -X github.com/banton/stompy-cli/cmd.Version={{.Version}}
+      - -s -w -X github.com/stompy-ai/stompy-cli/cmd.Version={{.Version}}
 
 archives:
   - format: tar.gz

@@ -25,7 +25,7 @@ func TestCheckForUpdate_CachedResult(t *testing.T) {
 	cache := VersionCache{
 		LastCheck:     time.Now(),
 		LatestVersion: "v0.2.0",
-		ReleaseURL:    "https://github.com/banton/stompy-cli/releases/tag/v0.2.0",
+		ReleaseURL:    "https://github.com/stompy-ai/stompy-cli/releases/tag/v0.2.0",
 	}
 	data, _ := json.Marshal(cache)
 	os.WriteFile(filepath.Join(dir, cacheFileName), data, 0644)
@@ -144,7 +144,7 @@ func TestFormatSize(t *testing.T) {
 func TestGetLatestRelease_MockServer(t *testing.T) {
 	release := Release{
 		TagName: "v0.3.0",
-		HTMLURL: "https://github.com/banton/stompy-cli/releases/tag/v0.3.0",
+		HTMLURL: "https://github.com/stompy-ai/stompy-cli/releases/tag/v0.3.0",
 		Assets: []Asset{
 			{Name: "stompy_v0.3.0_darwin_arm64.tar.gz", Size: 5000000},
 		},

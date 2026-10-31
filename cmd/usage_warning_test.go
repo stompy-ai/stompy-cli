@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/banton/stompy-cli/internal/api"
+	"github.com/stompy-ai/stompy-cli/internal/api"
 )
 
 // captureStderr redirects os.Stderr for the duration of fn and returns what

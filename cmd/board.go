@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/banton/stompy-cli/internal/api"
 	"github.com/spf13/cobra"
+	"github.com/stompy-ai/stompy-cli/internal/api"
 )
 
 func newBoardCmd() *cobra.Command {

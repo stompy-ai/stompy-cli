@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/banton/stompy-cli/internal/contract"
+	"github.com/stompy-ai/stompy-cli/internal/contract"
 )
 
 // STOMPY-2728, the oracle. surface_contract.json maps COMMAND NAMES to

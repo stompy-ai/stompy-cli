@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/banton/stompy-cli/internal/output"
 	"github.com/spf13/cobra"
+	"github.com/stompy-ai/stompy-cli/internal/output"
 )
 
 // STOMPY-2705: project API key management. Owner-only and signed-in only —

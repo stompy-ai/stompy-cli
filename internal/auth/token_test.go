@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/banton/stompy-cli/internal/config"
 	"github.com/spf13/viper"
+	"github.com/stompy-ai/stompy-cli/internal/config"
 )
 
 func TestIsExpired_FutureTime(t *testing.T) {

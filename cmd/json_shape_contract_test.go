@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/banton/stompy-cli/internal/api"
 	"github.com/spf13/cobra"
+	"github.com/stompy-ai/stompy-cli/internal/api"
 )
 
 // STOMPY-2769: golden-shape contract for every `-o json` output that

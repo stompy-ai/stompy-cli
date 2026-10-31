@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/banton/stompy-cli/internal/repomarker"
 	"github.com/spf13/viper"
+	"github.com/stompy-ai/stompy-cli/internal/repomarker"
 )
 
 const (

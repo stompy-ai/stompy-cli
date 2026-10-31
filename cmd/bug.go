@@ -3,8 +3,8 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/banton/stompy-cli/internal/output"
 	"github.com/spf13/cobra"
+	"github.com/stompy-ai/stompy-cli/internal/output"
 )
 
 // bug list/get call the dev-team bug-reports dashboard endpoint, which

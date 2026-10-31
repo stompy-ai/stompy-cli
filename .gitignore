@@ -1,5 +1,5 @@
 bin/
-stompy
+/stompy
 coverage.out
 coverage.html
 dist/

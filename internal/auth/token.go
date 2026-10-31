@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/banton/stompy-cli/internal/config"
+	"github.com/stompy-ai/stompy-cli/internal/config"
 )
 
 const TokenExpiryBuffer = 5 * time.Minute

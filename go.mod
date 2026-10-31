@@ -1,4 +1,4 @@
-module github.com/banton/stompy-cli
+module github.com/stompy-ai/stompy-cli
 
 go 1.25.5
 

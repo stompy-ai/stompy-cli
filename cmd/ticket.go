@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/banton/stompy-cli/internal/api"
-	"github.com/banton/stompy-cli/internal/output"
 	"github.com/spf13/cobra"
+	"github.com/stompy-ai/stompy-cli/internal/api"
+	"github.com/stompy-ai/stompy-cli/internal/output"
 )
 
 var ticketCmd = &cobra.Command{

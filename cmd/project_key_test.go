@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/banton/stompy-cli/internal/api"
+	"github.com/stompy-ai/stompy-cli/internal/api"
 )
 
 // STOMPY-2705: `stompy project key mint|info|revoke|request` and

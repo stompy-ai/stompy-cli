@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/banton/stompy-cli/internal/api"
-	"github.com/banton/stompy-cli/internal/output"
 	"github.com/spf13/cobra"
+	"github.com/stompy-ai/stompy-cli/internal/api"
+	"github.com/stompy-ai/stompy-cli/internal/output"
 )
 
 var conflictCmd = &cobra.Command{
