@@ -8,6 +8,12 @@ import (
 	"github.com/stompy-ai/stompy-cli/internal/api"
 )
 
+var leaseShorts = map[string]string{
+	"claim":      "Atomically claim a ticket lease, or renew your own",
+	"release":    "Release your lease on a ticket",
+	"claim-next": "Claim the highest-priority eligible ticket for an assignee",
+}
+
 func newTicketLeaseCmd(action string) *cobra.Command {
 	use := action + " <id>"
 	args := cobra.ExactArgs(1)
@@ -15,7 +21,7 @@ func newTicketLeaseCmd(action string) *cobra.Command {
 		use = action
 		args = cobra.NoArgs
 	}
-	command := &cobra.Command{Use: use, Short: "Atomically claim, renew or release a ticket lease", Args: args}
+	command := &cobra.Command{Use: use, Short: leaseShorts[action], Args: args}
 	command.Flags().String("agent-label", "", "Caller-supplied agent label; account comes from authentication")
 	if action != "release" {
 		command.Flags().Int("ttl-minutes", 60, "Lease length, 1..480 minutes; re-read updated_at after claiming")

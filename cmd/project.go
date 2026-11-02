@@ -20,35 +20,59 @@ var projectCreateCmd = &cobra.Command{
 	Short: "Create a new project",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		desc, _ := cmd.Flags().GetString("description")
-		if shared, _ := cmd.Flags().GetBool("shared"); shared {
-			return createSharedProject(args[0], desc)
-		}
-		req := api.ProjectCreate{Name: args[0]}
-		if desc != "" {
-			req.Description = &desc
-		}
-
-		resp, err := apiClient.CreateProject(req)
+		purpose, err := createPurpose(cmd)
 		if err != nil {
 			return err
 		}
+		if shared, _ := cmd.Flags().GetBool("shared"); shared {
+			return createSharedProject(args[0], purpose)
+		}
 
-		f := getFormatter()
-		fmt.Print(f.FormatSingle([]output.KeyValue{
+		resp, err := apiClient.CreateProject(api.ProjectCreate{Name: args[0]})
+		if err != nil {
+			return err
+		}
+		fields := []output.KeyValue{
 			{Key: "Name", Value: resp.Name},
 			{Key: "Schema", Value: resp.SchemaName},
 			{Key: "Created", Value: resp.CreatedAt.Local().Format("2006-01-02 15:04:05")},
-		}))
+		}
+
+		// POST /projects has no description field (422 since STOMPY-3343):
+		// a project's text is its KG purpose, set by the same PATCH
+		// `project set-metadata` sends (STOMPY-3370).
+		if purpose != "" {
+			if _, err := apiClient.SetProjectMetadata(resp.Name, api.ProjectMetadataUpdate{Purpose: &purpose}); err != nil {
+				return fmt.Errorf("project %q was created, but setting its purpose failed (retry with `stompy project set-metadata %s --purpose ...`): %w",
+					resp.Name, resp.Name, err)
+			}
+			fields = append(fields, output.KeyValue{Key: "Purpose", Value: purpose})
+		}
+
+		f := getFormatter()
+		fmt.Print(f.FormatSingle(fields))
 		return nil
 	},
 }
 
+// createPurpose reads --purpose, or its deprecated alias --description.
+func createPurpose(cmd *cobra.Command) (string, error) {
+	purpose, _ := cmd.Flags().GetString("purpose")
+	desc, _ := cmd.Flags().GetString("description")
+	if purpose != "" && desc != "" && purpose != desc {
+		return "", fmt.Errorf("--description is a deprecated alias of --purpose; pass only --purpose")
+	}
+	if purpose == "" {
+		purpose = desc
+	}
+	return purpose, nil
+}
+
 // createSharedProject is `project create --shared` (REST POST /shared-projects,
 // the team-project door MCP's project_create already reaches).
-func createSharedProject(name, desc string) error {
-	if desc != "" {
-		return fmt.Errorf("--description is not supported with --shared")
+func createSharedProject(name, purpose string) error {
+	if purpose != "" {
+		return fmt.Errorf("--purpose/--description is not supported with --shared")
 	}
 	resp, err := apiClient.CreateSharedProject(name)
 	if err != nil {
@@ -265,7 +289,9 @@ var projectBriefCmd = &cobra.Command{
 }
 
 func init() {
-	projectCreateCmd.Flags().String("description", "", "Project description")
+	projectCreateCmd.Flags().String("purpose", "", "What the project is for (its KG purpose, as set by `project set-metadata --purpose`)")
+	projectCreateCmd.Flags().String("description", "", "Deprecated alias of --purpose")
+	_ = projectCreateCmd.Flags().MarkDeprecated("description", "use --purpose")
 	projectCreateCmd.Flags().Bool("shared", false, "Create a team (shared) project you can invite members to")
 	projectListCmd.Flags().Bool("stats", false, "Include project statistics")
 	projectInfoCmd.Flags().Bool("stats", false, "Include project statistics")

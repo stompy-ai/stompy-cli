@@ -6,9 +6,10 @@ import (
 	"time"
 )
 
+// ProjectCreate is the POST /projects body. It has no description: the server
+// refuses one (STOMPY-3343); a project's text is its KG purpose (PATCH).
 type ProjectCreate struct {
-	Name        string  `json:"name"`
-	Description *string `json:"description,omitempty"`
+	Name string `json:"name"`
 }
 
 type ProjectStats struct {
