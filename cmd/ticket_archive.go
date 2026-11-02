@@ -8,12 +8,18 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var archiveShorts = map[string]string{
+	"archive":       "Archive a parked or closed ticket",
+	"unarchive":     "Restore an archived ticket without changing its status",
+	"batch-archive": "Archive several parked or closed tickets (preview unless --confirm)",
+}
+
 func newTicketArchiveCmd(action string) *cobra.Command {
 	use := action + " <id>"
 	if action == "batch-archive" {
 		use = action + " <id,id,...>"
 	}
-	command := &cobra.Command{Use: use, Short: "Archive parked or closed tickets, or restore without changing status", Args: cobra.ExactArgs(1)}
+	command := &cobra.Command{Use: use, Short: archiveShorts[action], Args: cobra.ExactArgs(1)}
 	if action == "batch-archive" {
 		command.Flags().Bool("confirm", false, "Execute the batch; default is a read-only preview")
 	}
