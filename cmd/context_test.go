@@ -85,6 +85,33 @@ func TestParseTopicRef(t *testing.T) {
 			wantTopic:   "devops_ci",
 			wantVersion: "v3",
 		},
+		// STOMPY-3476: a topic never holds '/' (STOMPY-1664), so two slashes are
+		// owner/project/topic. The project keeps its owner; projectPath turns it
+		// into ?owner=, which drops the caller's own handle server-side.
+		{
+			name:        "owner-qualified deeplink keeps the owner on the project",
+			ref:         "red-base-66664054/dogfood_r3_share/time_control",
+			projectFlag: "",
+			wantProject: "red-base-66664054/dogfood_r3_share",
+			wantTopic:   "time_control",
+			wantVersion: "",
+		},
+		{
+			name:        "owner-qualified deeplink with version",
+			ref:         "jeroen/dogfood/notes@v1.2",
+			projectFlag: "",
+			wantProject: "jeroen/dogfood",
+			wantTopic:   "notes",
+			wantVersion: "v1.2",
+		},
+		{
+			name:        "canonical sigil form is the same address",
+			ref:         "@jeroen/dogfood/notes",
+			projectFlag: "",
+			wantProject: "jeroen/dogfood",
+			wantTopic:   "notes",
+			wantVersion: "",
+		},
 	}
 
 	for _, tc := range cases {
