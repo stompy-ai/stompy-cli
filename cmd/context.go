@@ -22,15 +22,28 @@ import (
 //	"project/topic@v1.0"   → project="project", topic="topic", version="v1.0"
 //	"plain_topic"          → project=projectFlag, topic="plain_topic", version=""
 //	"plain_topic@v2"       → project=projectFlag, topic="plain_topic", version="v2"
+//	"owner/project/topic"  → project="owner/project", topic="topic" (STOMPY-3476)
 //
 // If a deeplink project is extracted AND projectFlag is non-empty, the deeplink project wins
 // and a warning is printed.
 func parseTopicRef(ref, projectFlag string) (project, topic, version string) {
+	// The canonical sigil (@owner/project/topic) names the same address as
+	// owner/project/topic; drop it before looking for the @version suffix.
+	base := strings.TrimPrefix(ref, "@")
 	// Split off version suffix (@version)
-	base := ref
-	if idx := strings.LastIndex(ref, "@"); idx != -1 {
-		version = ref[idx+1:]
-		base = ref[:idx]
+	if idx := strings.LastIndex(base, "@"); idx != -1 {
+		version = base[idx+1:]
+		base = base[:idx]
+	}
+
+	// A topic never holds '/' (STOMPY-1664), so two slashes are
+	// owner/project/topic: the project keeps its owner (STOMPY-3476).
+	if strings.Count(base, "/") >= 2 {
+		idx := strings.LastIndex(base, "/")
+		if projectFlag != "" && projectFlag != base[:idx] {
+			fmt.Fprintf(os.Stderr, "warning: deeplink project %q overrides --project %q\n", base[:idx], projectFlag)
+		}
+		return base[:idx], base[idx+1:], version
 	}
 
 	// Check for project/topic deeplink syntax
@@ -56,6 +69,12 @@ func parseTopicRef(ref, projectFlag string) (project, topic, version string) {
 // requirement the deeplink didn't need.
 func resolveTopicRef(ref string) (project, topic, version string, err error) {
 	project, topic, version = parseTopicRef(ref, flagProject)
+	// owner/project/topic is the most a ref can name (a topic cannot hold '/'):
+	// more, or an empty part, is refused here rather than sent as a project
+	// that 404s under a confusing name (STOMPY-3476).
+	if owner, name, ok := strings.Cut(project, "/"); ok && (owner == "" || name == "" || strings.Contains(name, "/") || topic == "") {
+		return "", "", "", fmt.Errorf("invalid deeplink %q: with an owner it is owner/project/topic (one handle, one project, one topic; a topic cannot contain '/')", ref)
+	}
 	if project != "" {
 		return project, topic, version, nil
 	}
