@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -127,5 +128,15 @@ func TestParseTopicRef(t *testing.T) {
 				t.Errorf("version: got %q, want %q", gotVersion, tc.wantVersion)
 			}
 		})
+	}
+}
+
+// STOMPY-3476 review: more than owner/project/topic names nothing (a topic
+// cannot hold '/'), so it is refused naming the form, never sent as a project.
+func TestResolveTopicRefRefusesMoreThanOwnerProjectTopic(t *testing.T) {
+	for _, ref := range []string{"a/b/c/d", "jeroen//topic", "jeroen/proj/"} {
+		if _, _, _, err := resolveTopicRef(ref); err == nil || !strings.Contains(err.Error(), "owner/project/topic") {
+			t.Errorf("%q: want an owner/project/topic refusal, got %v", ref, err)
+		}
 	}
 }

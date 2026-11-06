@@ -69,6 +69,12 @@ func parseTopicRef(ref, projectFlag string) (project, topic, version string) {
 // requirement the deeplink didn't need.
 func resolveTopicRef(ref string) (project, topic, version string, err error) {
 	project, topic, version = parseTopicRef(ref, flagProject)
+	// owner/project/topic is the most a ref can name (a topic cannot hold '/'):
+	// more, or an empty part, is refused here rather than sent as a project
+	// that 404s under a confusing name (STOMPY-3476).
+	if owner, name, ok := strings.Cut(project, "/"); ok && (owner == "" || name == "" || strings.Contains(name, "/") || topic == "") {
+		return "", "", "", fmt.Errorf("invalid deeplink %q: with an owner it is owner/project/topic (one handle, one project, one topic; a topic cannot contain '/')", ref)
+	}
 	if project != "" {
 		return project, topic, version, nil
 	}
