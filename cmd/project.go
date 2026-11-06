@@ -155,14 +155,19 @@ var projectInfoCmd = &cobra.Command{
 		if resp.Description != nil {
 			fields = append(fields, output.KeyValue{Key: "Description", Value: *resp.Description})
 		}
-		if withStats && resp.Stats != nil {
+		// The detail route sends counts on every read; --stats adds storage (STOMPY-3473).
+		if resp.Stats != nil {
 			fields = append(fields,
 				output.KeyValue{Key: "Contexts", Value: fmt.Sprintf("%d", resp.Stats.ContextCount)},
 				output.KeyValue{Key: "Sessions", Value: fmt.Sprintf("%d", resp.Stats.SessionCount)},
 				output.KeyValue{Key: "Files", Value: fmt.Sprintf("%d", resp.Stats.FileCount)},
-				output.KeyValue{Key: "DB Storage", Value: formatBytes(resp.Stats.StorageBytesDB)},
-				output.KeyValue{Key: "S3 Storage", Value: formatBytes(resp.Stats.StorageBytesS3)},
 			)
+			if withStats {
+				fields = append(fields,
+					output.KeyValue{Key: "DB Storage", Value: formatBytes(resp.Stats.StorageBytesDB)},
+					output.KeyValue{Key: "S3 Storage", Value: formatBytes(resp.Stats.StorageBytesS3)},
+				)
+			}
 			if resp.Stats.LastActivity != nil {
 				fields = append(fields, output.KeyValue{Key: "Last Activity", Value: resp.Stats.LastActivity.Local().Format("2006-01-02 15:04:05")})
 			}
