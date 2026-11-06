@@ -19,8 +19,8 @@ func TestListProjects(t *testing.T) {
 		if r.URL.Path != "/projects" {
 			t.Errorf("path = %s, want /projects", r.URL.Path)
 		}
-		if r.URL.Query().Get("stats") != "true" {
-			t.Error("expected stats=true query param")
+		if r.URL.Query().Get("include_stats") != "true" { // the route's query name (STOMPY-3473)
+			t.Error("expected include_stats=true query param")
 		}
 		json.NewEncoder(w).Encode(ProjectListResponse{
 			Projects: []ProjectResponse{
@@ -46,7 +46,7 @@ func TestListProjects(t *testing.T) {
 
 func TestListProjects_WithoutStats(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Query().Get("stats") != "" {
+		if r.URL.Query().Has("include_stats") {
 			t.Error("stats param should not be set")
 		}
 		json.NewEncoder(w).Encode(ProjectListResponse{Total: 0})

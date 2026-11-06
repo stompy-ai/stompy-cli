@@ -39,7 +39,7 @@ type ProjectListResponse struct {
 func (c *Client) ListProjects(withStats bool) (*ProjectListResponse, error) {
 	params := url.Values{}
 	if withStats {
-		params.Set("stats", "true")
+		params.Set("include_stats", "true") // the routes' query name (STOMPY-3473)
 	}
 	var resp ProjectListResponse
 	if err := c.Get("/projects", params, &resp); err != nil {
@@ -51,7 +51,7 @@ func (c *Client) ListProjects(withStats bool) (*ProjectListResponse, error) {
 func (c *Client) GetProject(name string, withStats bool) (*ProjectResponse, error) {
 	params := url.Values{}
 	if withStats {
-		params.Set("stats", "true")
+		params.Set("include_stats", "true") // the routes' query name (STOMPY-3473)
 	}
 	var resp ProjectResponse
 	if err := c.Get(projectPath(name, ""), params, &resp); err != nil {
