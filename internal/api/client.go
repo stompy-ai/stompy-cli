@@ -3,6 +3,7 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -50,6 +51,9 @@ func NewClient(baseURL, authToken, version string, verbose bool) *Client {
 }
 
 func (c *Client) Do(method, path string, body any, params url.Values) ([]byte, int, error) {
+	if emptyProjectSegment(path) {
+		return nil, 0, errEmptyProject
+	}
 	u := c.BaseURL + path
 	if len(params) > 0 {
 		sep := "?"
@@ -317,4 +321,16 @@ func (c *Client) DeleteWithResult(path string, params url.Values, result any) er
 // never preview it.
 func isKeyMint(method, path string) bool {
 	return method == http.MethodPost && strings.HasSuffix(strings.SplitN(path, "?", 2)[0], "/api-key")
+}
+
+// errEmptyProject refuses a project route built from an empty name (STOMPY-3482):
+// "/projects/" is the LIST route, and its body decoded as one zero-valued project,
+// so `project info ""` printed a blank record and exited 0.
+var errEmptyProject = errors.New("project name is empty: pass the project to act on")
+
+// emptyProjectSegment reports a "/projects/<name>..." path whose <name> is empty,
+// as projectPath builds it from "" or "owner/". "/projects" itself is the list.
+func emptyProjectSegment(path string) bool {
+	rest, ok := strings.CutPrefix(path, "/projects/")
+	return ok && (rest == "" || rest[0] == '/' || rest[0] == '?')
 }
