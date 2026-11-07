@@ -1,0 +1,8 @@
+{
+  "extensions": [".go"],
+  "ignore_dirs": ["vendor", ".git", ".worktrees", ".claude", "dist"],
+  "exclude": [
+    {"glob": "*_test.go", "class": "test", "reason": "go test file"}
+  ],
+  "clone": {"format": "go", "min_tokens": 70}
+}
