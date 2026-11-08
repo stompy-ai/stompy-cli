@@ -46,7 +46,11 @@ func stripControls(b []byte) []byte {
 		}
 		r, size := utf8.DecodeRune(b[i:])
 		if r == utf8.RuneError && size <= 1 {
-			out = append(out, b[i]) // not UTF-8: leave it to the decoder
+			if b[i] >= 0x80 && b[i] <= 0x9f {
+				out = append(out, "\ufffd"...) // a lone C1 byte is CSI/OSC to an 8-bit terminal
+			} else {
+				out = append(out, b[i]) // other invalid UTF-8: leave it to the decoder
+			}
 			i++
 			continue
 		}

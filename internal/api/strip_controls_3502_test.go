@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -72,5 +73,34 @@ func TestMCPToolTextIsStripped3502(t *testing.T) {
 		if strings.ContainsAny(got, "\x1b\x07") || strings.Contains(got, `\u001b`) {
 			t.Errorf("tool text kept a control: %q", got)
 		}
+	}
+}
+
+// Review of #51 (Kimi K3): the whole C1 range and DEL, escaped and raw; a lone
+// C1 byte that is not valid UTF-8; and stripping twice changes nothing (the MCP
+// path strips the body and then the decoded text).
+func TestStripControlsCoversC1AndDEL3502(t *testing.T) {
+	for v := 0x7f; v <= 0x9f; v++ {
+		esc := fmt.Sprintf(`{"t":"a\u%04xb"}`, v)
+		if got := decodeT(t, []byte(esc))["t"]; got != fmt.Sprintf(`a\x%02xb`, v) {
+			t.Errorf("escaped U+%04X: %q", v, got)
+		}
+		raw := "a" + string(rune(v)) + "b"
+		if got := string(stripControls([]byte(raw))); got != "a�b" {
+			t.Errorf("raw U+%04X: %q", v, got)
+		}
+	}
+	// Byte checks: ContainsAny would read "\x9b" as U+FFFD and match the mark.
+	if got := string(stripControls([]byte("a\x9b2Jb\x9d8;;x"))); strings.IndexByte(got, 0x9b) >= 0 ||
+		strings.IndexByte(got, 0x9d) >= 0 || got != "a\ufffd2Jb\ufffd8;;x" {
+		t.Errorf("a lone C1 byte passed through: %q", got)
+	}
+}
+
+func TestStripControlsIsIdempotent3502(t *testing.T) {
+	in := []byte(`{"t":"x\u001b]52;c;e\u0007\\u001b \r\n\u009d","r":"` + "a\x1b\x9bb" + `"}`)
+	once := stripControls(in)
+	if twice := stripControls(once); string(twice) != string(once) {
+		t.Errorf("strip twice:\n once %q\ntwice %q", once, twice)
 	}
 }

@@ -142,13 +142,14 @@ func (c *Client) Do(method, path string, body any, params url.Values) ([]byte, i
 		if err != nil {
 			return nil, resp.StatusCode, fmt.Errorf("reading response body: %w", err)
 		}
-		respBody = stripControls(respBody) // STOMPY-3502
+		wireBytes := len(respBody)
+		respBody = stripControls(respBody) // STOMPY-3502; the debug preview below prints it
 
 		// Reset NoCache after each successful response
 		c.NoCache = false
 
 		if c.Verbose {
-			fmt.Fprintf(os.Stderr, "[DEBUG] <-- %d %s (%s, %d bytes)\n", resp.StatusCode, http.StatusText(resp.StatusCode), elapsed, len(respBody))
+			fmt.Fprintf(os.Stderr, "[DEBUG] <-- %d %s (%s, %d bytes)\n", resp.StatusCode, http.StatusText(resp.StatusCode), elapsed, wireBytes)
 			if xCache := resp.Header.Get("X-Cache"); xCache != "" {
 				fmt.Fprintf(os.Stderr, "[DEBUG]     X-Cache: %s\n", xCache)
 			}

@@ -16,8 +16,12 @@ func TestATicketTitleCannotDriveTheTerminal3502(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Contains(out, "\x1b]") || strings.Contains(out, "\x1b[2J") || strings.Contains(out, "\x07") {
+	if strings.ContainsAny(out, "\x07\u009b\u009d") || strings.Contains(out, "\x1b]") || strings.Contains(out, "\x1b[2J") {
 		t.Errorf("a server string drove the terminal:\n%q", out)
+	}
+	// The attempt stays visible (marked, not silently dropped).
+	if !strings.Contains(out, `\x1b]52;c;`) {
+		t.Errorf("the attempt is not visible:\n%q", out)
 	}
 	if !strings.Contains(out, "Order the compactor") {
 		t.Errorf("the title itself was lost:\n%q", out)
