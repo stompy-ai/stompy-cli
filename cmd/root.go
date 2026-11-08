@@ -202,7 +202,8 @@ func resolveAuthToken() (string, error) {
 
 // getProject resolves the active project name.
 func getProject() (string, error) {
-	return config.ResolveProject(flagProject)
+	given := rootCmd.PersistentFlags().Changed("project")
+	return config.ResolveProjectFlag(flagProject, given)
 }
 
 // getFormatter returns the output formatter based on flags and config.
