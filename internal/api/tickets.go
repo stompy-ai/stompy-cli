@@ -44,6 +44,7 @@ type TicketResponse struct {
 	ClosedAt     *float64         `json:"closed_at,omitempty"`
 	History      []TicketHistory  `json:"history,omitempty"`
 	Links        []TicketLinkResp `json:"links,omitempty"`
+	ContextLinks ContextLinkList  `json:"context_links,omitempty"` // STOMPY-3500
 	URL          string           `json:"url,omitempty"`
 	// STOMPY-2455: create only. Advisory: the open tickets this one may repeat.
 	PossibleDuplicates []DuplicateHint `json:"possible_duplicates,omitempty"`
@@ -304,4 +305,33 @@ func (c *Client) ListLinks(project string, ticketID int) ([]TicketLinkResp, erro
 
 func (c *Client) RemoveLink(project string, ticketID, linkID int) error {
 	return c.Delete(projectPath(project, fmt.Sprintf("/tickets/%d/links/%d", ticketID, linkID)), nil)
+}
+
+// ContextLinkResp is one ticket->context link (stompy-ticketing ContextLinkResponse).
+type ContextLinkResp struct {
+	ID             int    `json:"id"`
+	TicketID       int    `json:"ticket_id"`
+	ContextLabel   string `json:"context_label"`
+	ContextVersion string `json:"context_version"`
+	LinkType       string `json:"link_type"`
+}
+
+// ContextLinkList decodes context_links, whose items the server types as
+// ContextLinkResponse | str; string items carry nothing to show and are skipped.
+type ContextLinkList []ContextLinkResp
+
+func (l *ContextLinkList) UnmarshalJSON(b []byte) error {
+	var raw []json.RawMessage
+	if err := json.Unmarshal(b, &raw); err != nil {
+		return err
+	}
+	out := ContextLinkList{}
+	for _, item := range raw {
+		var c ContextLinkResp
+		if json.Unmarshal(item, &c) == nil && c.ContextLabel != "" {
+			out = append(out, c)
+		}
+	}
+	*l = out
+	return nil
 }

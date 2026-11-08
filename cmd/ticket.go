@@ -133,6 +133,9 @@ var ticketGetCmd = &cobra.Command{
 		if resp.ClaimedBy != nil {
 			fields = append(fields, output.KeyValue{Key: "Lease", Value: leaseDisplay(*resp)})
 		}
+		if lines := ticketLinkLines(*resp); len(lines) > 0 { // STOMPY-3500
+			fields = append(fields, output.KeyValue{Key: "Links", Value: strings.Join(lines, "\n")})
+		}
 
 		fmt.Print(f.FormatSingle(fields))
 		return nil
@@ -228,6 +231,7 @@ var ticketMoveCmd = &cobra.Command{
 		}
 
 		fmt.Printf("%s Ticket #%d moved to %s\n", output.Success("✓"), resp.ID, output.ColorStatus(resp.Status))
+		printTicketLinks(*resp)
 		return nil
 	},
 }
@@ -253,6 +257,7 @@ var ticketCloseCmd = &cobra.Command{
 		}
 
 		fmt.Printf("%s Ticket #%d closed (%s)\n", output.Success("✓"), resp.ID, output.ColorStatus(resp.Status))
+		printTicketLinks(*resp)
 		return nil
 	},
 }
