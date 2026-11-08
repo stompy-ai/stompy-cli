@@ -142,6 +142,7 @@ func (c *Client) Do(method, path string, body any, params url.Values) ([]byte, i
 		if err != nil {
 			return nil, resp.StatusCode, fmt.Errorf("reading response body: %w", err)
 		}
+		respBody = stripControls(respBody) // STOMPY-3502
 
 		// Reset NoCache after each successful response
 		c.NoCache = false

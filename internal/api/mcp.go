@@ -138,6 +138,7 @@ func (m *MCPClient) CallTool(toolName string, arguments map[string]any) (string,
 	if err != nil {
 		return "", fmt.Errorf("reading MCP response: %w", err)
 	}
+	respBytes = stripControls(respBytes) // STOMPY-3502
 
 	if m.Verbose {
 		fmt.Fprintf(os.Stderr, "[DEBUG] <-- %d %s (%s, %d bytes)\n", resp.StatusCode, http.StatusText(resp.StatusCode), elapsed, len(respBytes))
@@ -183,7 +184,7 @@ func (m *MCPClient) CallTool(toolName string, arguments map[string]any) (string,
 
 	if toolResult.IsError {
 		if len(toolResult.Content) > 0 {
-			return "", fmt.Errorf("MCP tool error: %s", toolResult.Content[0].Text)
+			return "", fmt.Errorf("MCP tool error: %s", stripControls([]byte(toolResult.Content[0].Text)))
 		}
 		return "", fmt.Errorf("MCP tool returned an error")
 	}
@@ -196,7 +197,9 @@ func (m *MCPClient) CallTool(toolName string, arguments map[string]any) (string,
 		}
 	}
 
-	return stripRecap(strings.Join(texts, "\n")), nil
+	// The text may itself be JSON carrying \u001b escapes the outer strip read as
+	// literal text, so it is stripped again once decoded (STOMPY-3502).
+	return string(stripControls([]byte(stripRecap(strings.Join(texts, "\n"))))), nil
 }
 
 // NonJSONToolResult is returned by CallToolTyped when the server answered

@@ -151,6 +151,7 @@ func (c *Client) UploadFile(project, filePath, label string) (*FileUploadRespons
 	if err != nil {
 		return nil, fmt.Errorf("reading upload response: %w", err)
 	}
+	respBody = stripControls(respBody) // STOMPY-3502
 
 	if c.Verbose {
 		fmt.Fprintf(os.Stderr, "[DEBUG] <-- %d %s (%s, %d bytes)\n", resp.StatusCode, http.StatusText(resp.StatusCode), elapsed, len(respBody))
