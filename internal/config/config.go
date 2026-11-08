@@ -1,9 +1,11 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/spf13/viper"
@@ -253,4 +255,14 @@ func LoadNearestMarker() (*repomarker.Marker, string, error) {
 		return nil, "", err
 	}
 	return m, path, nil
+}
+
+// ResolveProjectFlag resolves the -p flag. given reports whether -p was passed:
+// an explicit empty or blank -p is refused rather than read as "no flag", which
+// would act on the default project (STOMPY-3499).
+func ResolveProjectFlag(flagValue string, given bool) (string, error) {
+	if given && strings.TrimSpace(flagValue) == "" {
+		return "", errors.New("project name is empty: pass the project to act on")
+	}
+	return ResolveProject(flagValue)
 }
