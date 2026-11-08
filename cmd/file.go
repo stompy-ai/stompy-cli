@@ -30,13 +30,20 @@ var fileUploadCmd = &cobra.Command{
 			return err
 		}
 
-		f := getFormatter()
-		fmt.Print(f.FormatSingle([]output.KeyValue{
+		fields := []output.KeyValue{
 			{Key: "ID", Value: fmt.Sprintf("%d", resp.ID)},
 			{Key: "Title", Value: resp.Title},
 			{Key: "Size", Value: formatBytes(resp.Metadata.SizeBytes)},
 			{Key: "Status", Value: resp.ProcessingStatus},
-		}))
+		}
+		// STOMPY-3125: the ID/Title of a duplicate are the EXISTING file's; say so.
+		if resp.IsDuplicate {
+			fields = append(fields, output.KeyValue{Key: "Duplicate", Value: resp.Message})
+		}
+		if resp.ReplacedFileID != nil {
+			fields = append(fields, output.KeyValue{Key: "Replaced", Value: fmt.Sprintf("file %d", *resp.ReplacedFileID)})
+		}
+		fmt.Print(getFormatter().FormatSingle(fields))
 		return nil
 	},
 }
