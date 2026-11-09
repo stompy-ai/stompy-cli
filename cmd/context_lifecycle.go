@@ -25,6 +25,9 @@ transition is changelogged and reversible with --state active.
   delivered  a PR/doc/email now carries this content; memory keeps the pointer
   archived   historical, still recallable by handle
 
+Re-park with explicit days and --renewal-key to renew the review clock.
+Reuse the key for retries; use a new key for a new human confirmation.
+
 Accepts deeplink syntax:
 
   stompy context lifecycle project/topic --state archived
@@ -41,6 +44,7 @@ Accepts deeplink syntax:
 		}
 		note, _ := cmd.Flags().GetString("note")
 		req := api.ContextLifecycleRequest{State: state, Note: note}
+		req.RenewalKey, _ = cmd.Flags().GetString("renewal-key")
 		if cmd.Flags().Changed("review-after-days") {
 			days, _ := cmd.Flags().GetInt("review-after-days")
 			if days < 0 {
@@ -98,5 +102,6 @@ func init() {
 	contextLifecycleCmd.Flags().String("state", "", "Target state: active, parked, delivered, archived (required)")
 	contextLifecycleCmd.Flags().Int("review-after-days", 0, "Parked only: days until the review (server default 60, max 3650)")
 	contextLifecycleCmd.Flags().String("note", "", "One-line changelog note (shown after the topic)")
+	contextLifecycleCmd.Flags().String("renewal-key", "", "Explicit re-park confirmation key; reuse for retries, new key for a new renewal")
 	contextCmd.AddCommand(contextLifecycleCmd)
 }
