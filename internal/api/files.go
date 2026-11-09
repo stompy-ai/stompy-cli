@@ -151,10 +151,10 @@ func (c *Client) UploadFile(project, filePath, label string) (*FileUploadRespons
 	if err != nil {
 		return nil, fmt.Errorf("reading upload response: %w", err)
 	}
-
 	if c.Verbose {
 		fmt.Fprintf(os.Stderr, "[DEBUG] <-- %d %s (%s, %d bytes)\n", resp.StatusCode, http.StatusText(resp.StatusCode), elapsed, len(respBody))
 	}
+	respBody = stripControls(respBody) // STOMPY-3502, after the wire byte count
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		apiErr := &APIError{StatusCode: resp.StatusCode}
