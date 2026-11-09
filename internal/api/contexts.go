@@ -163,6 +163,7 @@ type ContextLifecycleRequest struct {
 	State           string `json:"state"`
 	ReviewAfterDays *int   `json:"review_after_days,omitempty"`
 	Note            string `json:"note,omitempty"`
+	RenewalKey      string `json:"renewal_key,omitempty"`
 }
 
 // ContextLifecycleResponse is the MCP set_lifecycle payload, field for field.
