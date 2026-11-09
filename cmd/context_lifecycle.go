@@ -92,7 +92,11 @@ func lifecycleSummary(r *api.ContextLifecycleResponse) string {
 		if note == "" {
 			note = "no change"
 		}
-		return fmt.Sprintf("%s %s is already %s (%s)", output.Dim("="), output.Teal(r.Topic), r.Lifecycle, note)
+		line := fmt.Sprintf("%s %s is already %s (%s)", output.Dim("="), output.Teal(r.Topic), r.Lifecycle, note)
+		if r.ReviewAfter != "" {
+			line += fmt.Sprintf(" (receipt review by %s)", r.ReviewAfter)
+		}
+		return line
 	}
 	line := fmt.Sprintf("%s %s: %s → %s", output.Success("✓"), output.Teal(r.Topic), r.Previous, r.Lifecycle)
 	if r.ReviewAfter != "" {
