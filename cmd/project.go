@@ -164,8 +164,8 @@ var projectInfoCmd = &cobra.Command{
 			)
 			if withStats {
 				fields = append(fields,
-					output.KeyValue{Key: "DB Storage", Value: formatBytes(resp.Stats.StorageBytesDB)},
-					output.KeyValue{Key: "S3 Storage", Value: formatBytes(resp.Stats.StorageBytesS3)},
+					output.KeyValue{Key: "DB Storage", Value: formatStorage(resp.Stats.StorageBytesDB)},
+					output.KeyValue{Key: "S3 Storage", Value: formatStorage(resp.Stats.StorageBytesS3)},
 				)
 			}
 			if resp.Stats.LastActivity != nil {
@@ -311,6 +311,15 @@ func init() {
 	projectCmd.AddCommand(projectBriefCmd)
 	projectCmd.AddCommand(projectKeyCmd)
 	rootCmd.AddCommand(projectCmd)
+}
+
+// formatStorage reads a nil size as "not shown": the server sizes only your
+// own projects, and a null is not a zero (STOMPY-3500).
+func formatStorage(b *int) string {
+	if b == nil {
+		return "not shown"
+	}
+	return formatBytes(*b)
 }
 
 func formatBytes(b int) string {

@@ -16,8 +16,8 @@ type ProjectStats struct {
 	ContextCount   int        `json:"context_count"`
 	SessionCount   int        `json:"session_count"`
 	FileCount      int        `json:"file_count"`
-	StorageBytesDB int        `json:"storage_bytes_db"`
-	StorageBytesS3 int        `json:"storage_bytes_s3"`
+	StorageBytesDB *int       `json:"storage_bytes_db"` // nil: not shown (a project shared with you, STOMPY-3500)
+	StorageBytesS3 *int       `json:"storage_bytes_s3"`
 	LastActivity   *time.Time `json:"last_activity,omitempty"`
 }
 
