@@ -26,7 +26,7 @@ key stops working immediately.
 The secret is printed to stdout exactly once and cannot be retrieved later.
 Capture it directly into a secret store or .env file rather than a terminal
 that is being recorded or shared.`,
-	Args: namedProject("mint"),
+	Args: namedProject(),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		label, _ := cmd.Flags().GetString("label")
 		resp, err := apiClient.MintProjectKey(args[0], label)
@@ -57,7 +57,7 @@ that is being recorded or shared.`,
 var projectKeyInfoCmd = &cobra.Command{
 	Use:   "info <project>",
 	Short: "Show the active key's metadata (never the secret)",
-	Args:  namedProject("info"),
+	Args:  namedProject(),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		resp, err := apiClient.GetProjectKey(args[0])
 		if err != nil {
@@ -92,7 +92,7 @@ var projectKeyInfoCmd = &cobra.Command{
 var projectKeyRevokeCmd = &cobra.Command{
 	Use:   "revoke <project>",
 	Short: "Revoke the project's active API key",
-	Args:  namedProject("revoke"),
+	Args:  namedProject(),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := apiClient.RevokeProjectKey(args[0]); err != nil {
 			return err
@@ -111,7 +111,7 @@ var projectKeyRevokeCmd = &cobra.Command{
 var projectKeyRequestCmd = &cobra.Command{
 	Use:   "request <project>",
 	Short: "Ask the project owner(s) to generate a key (team members)",
-	Args:  namedProject("request"),
+	Args:  namedProject(),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		resp, err := apiClient.RequestProjectKey(args[0])
 		if err != nil {
@@ -138,13 +138,13 @@ func init() {
 // namedProject answers a key command given no project with what to type, not
 // cobra's arity message ("accepts 1 arg(s), received 0", Markus 2026-11-09).
 // Keys are never resolved from a default project: mint rotates the live key.
-func namedProject(verb string) cobra.PositionalArgs {
+func namedProject() cobra.PositionalArgs {
 	return func(cmd *cobra.Command, args []string) error {
 		switch {
 		case len(args) == 0:
-			return fmt.Errorf("which project? Name it: stompy project key %s <project>", verb)
+			return fmt.Errorf("which project? Name it: %s <project>", cmd.CommandPath())
 		case len(args) > 1:
-			return fmt.Errorf("one project at a time: stompy project key %s <project>", verb)
+			return fmt.Errorf("one project at a time: %s <project>", cmd.CommandPath())
 		}
 		return nil
 	}

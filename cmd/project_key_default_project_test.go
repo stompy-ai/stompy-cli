@@ -30,8 +30,13 @@ func TestProjectKeyCommandsWithoutAProjectSayWhatToType(t *testing.T) {
 }
 
 func TestProjectKeyCommandsRefuseTwoProjects(t *testing.T) {
-	_, _, err := runCLI(t, func(w http.ResponseWriter, r *http.Request) {}, "project", "key", "info", "a", "b")
-	if err == nil || !strings.Contains(err.Error(), "one project at a time") {
-		t.Errorf("err = %v", err)
+	for _, sub := range []string{"mint", "info", "revoke", "request"} {
+		_, reqs, err := runCLI(t, func(w http.ResponseWriter, r *http.Request) {}, "project", "key", sub, "a", "b")
+		if err == nil || !strings.Contains(err.Error(), "one project at a time: stompy project key "+sub+" <project>") {
+			t.Errorf("%s: err = %v", sub, err)
+		}
+		if len(reqs) != 0 {
+			t.Errorf("%s: %d request(s) reached the server", sub, len(reqs))
+		}
 	}
 }
