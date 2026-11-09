@@ -9,3 +9,7 @@ def test_cli_keeps_the_callers_renewal_key_on_retries():
 
 def test_cli_without_renewal_keeps_the_legacy_request_control():
     check("./cmd", "TestContextLifecycle_WithoutRenewalKeyKeepsLegacyRequest")
+
+
+def test_cli_rejects_invalid_renewal_before_rest():
+    check("./cmd", "TestContextLifecycle_RenewalKeyRequiresParkedAndExplicitDays")
