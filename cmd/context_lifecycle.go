@@ -45,6 +45,9 @@ Accepts deeplink syntax:
 		note, _ := cmd.Flags().GetString("note")
 		req := api.ContextLifecycleRequest{State: state, Note: note}
 		req.RenewalKey, _ = cmd.Flags().GetString("renewal-key")
+		if cmd.Flags().Changed("renewal-key") && (strings.TrimSpace(req.RenewalKey) == "" || state != "parked" || !cmd.Flags().Changed("review-after-days")) {
+			return fmt.Errorf("--renewal-key requires nonblank text, --state parked and --review-after-days")
+		}
 		if cmd.Flags().Changed("review-after-days") {
 			days, _ := cmd.Flags().GetInt("review-after-days")
 			if days < 0 {
