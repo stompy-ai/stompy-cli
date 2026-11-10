@@ -33,7 +33,7 @@ Accepts deeplink syntax:
   stompy context lifecycle project/topic --state archived
   stompy context lifecycle topic -p project --state parked --review-after-days 30 --note "waiting on infra"
   stompy context lifecycle topic -p project --state active     # undo an archive`,
-	Args: cobra.ExactArgs(1),
+	Args: exactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		state, _ := cmd.Flags().GetString("state")
 		if state == "" {

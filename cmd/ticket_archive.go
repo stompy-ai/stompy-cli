@@ -19,7 +19,7 @@ func newTicketArchiveCmd(action string) *cobra.Command {
 	if action == "batch-archive" {
 		use = action + " <id,id,...>"
 	}
-	command := &cobra.Command{Use: use, Short: archiveShorts[action], Args: cobra.ExactArgs(1)}
+	command := &cobra.Command{Use: use, Short: archiveShorts[action], Args: exactArgs(1)}
 	if action == "batch-archive" {
 		command.Flags().Bool("confirm", false, "Execute the batch; default is a read-only preview")
 	}

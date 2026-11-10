@@ -153,7 +153,7 @@ var searchCmd = &cobra.Command{
 	Long: `Hybrid semantic + keyword search over a project's contexts
 (GET /projects/{name}/search — the same route and ranking as MCP context_search).
 Same command as 'stompy context search'.`,
-	Args: cobra.ExactArgs(1),
+	Args: exactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error { return runSearch(cmd, args[0]) },
 }
 

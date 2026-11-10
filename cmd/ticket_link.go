@@ -16,7 +16,7 @@ var ticketLinkCmd = &cobra.Command{
 var ticketLinkAddCmd = &cobra.Command{
 	Use:   "add <ticket-id>",
 	Short: "Add a link between tickets",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		project, err := getProject()
 		if err != nil {
@@ -55,7 +55,7 @@ var ticketLinkAddCmd = &cobra.Command{
 var ticketLinkListCmd = &cobra.Command{
 	Use:   "list <ticket-id>",
 	Short: "List links for a ticket",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		project, err := getProject()
 		if err != nil {
@@ -98,7 +98,7 @@ var ticketLinkListCmd = &cobra.Command{
 var ticketLinkRemoveCmd = &cobra.Command{
 	Use:   "remove <ticket-id> <link-id>",
 	Short: "Remove a ticket link",
-	Args:  cobra.ExactArgs(2),
+	Args:  exactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		project, err := getProject()
 		if err != nil {
