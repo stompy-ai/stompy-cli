@@ -18,7 +18,7 @@ var projectCmd = &cobra.Command{
 var projectCreateCmd = &cobra.Command{
 	Use:   "create <name>",
 	Short: "Create a new project",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		purpose, err := createPurpose(cmd)
 		if err != nil {
@@ -135,7 +135,7 @@ var projectListCmd = &cobra.Command{
 var projectInfoCmd = &cobra.Command{
 	Use:   "info <name>",
 	Short: "Show project details",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		withStats, _ := cmd.Flags().GetBool("stats")
 
@@ -181,7 +181,7 @@ var projectInfoCmd = &cobra.Command{
 var projectDeleteCmd = &cobra.Command{
 	Use:   "delete <name>",
 	Short: "Delete a project",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		confirm, _ := cmd.Flags().GetBool("confirm")
 		if !confirm {
@@ -209,7 +209,7 @@ var projectDeleteCmd = &cobra.Command{
 var projectUseCmd = &cobra.Command{
 	Use:   "use <name>",
 	Short: "Set the default project",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if err := config.SetValue("default_project", args[0]); err != nil {
 			return fmt.Errorf("saving default project: %w", err)
@@ -235,7 +235,7 @@ type ProjectBriefResponse struct {
 var projectBriefCmd = &cobra.Command{
 	Use:   "brief [name]",
 	Short: "Show LLM-synthesized project overview",
-	Args:  cobra.MaximumNArgs(1),
+	Args:  maximumArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		project := ""
 		if len(args) > 0 {

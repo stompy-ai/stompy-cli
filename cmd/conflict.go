@@ -87,7 +87,7 @@ var conflictListCmd = &cobra.Command{
 var conflictGetCmd = &cobra.Command{
 	Use:   "get <id>",
 	Short: "Show conflict details",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		project, err := getProject()
 		if err != nil {
@@ -164,7 +164,7 @@ var conflictDetectCmd = &cobra.Command{
 var conflictResolveCmd = &cobra.Command{
 	Use:   "resolve <id>",
 	Short: "Resolve a conflict",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		project, err := getProject()
 		if err != nil {

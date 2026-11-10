@@ -98,7 +98,7 @@ var contextLockCmd = &cobra.Command{
   stompy context lock project/topic --content "..."
   stompy context lock _global/topic --content "..."
   stompy context lock plain-topic --content "..."`,
-	Args: cobra.ExactArgs(1),
+	Args: exactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		project, topic, _, err := resolveTopicRef(args[0])
 		if err != nil {
@@ -147,7 +147,7 @@ var contextRecallCmd = &cobra.Command{
   stompy context recall _global/topic
   stompy context recall project/topic@v1.0
   stompy context recall plain-topic@v2`,
-	Args: cobra.ExactArgs(1),
+	Args: exactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		versionFlag, _ := cmd.Flags().GetString("version")
 		project, topic, versionRef, err := resolveTopicRef(args[0])
@@ -189,7 +189,7 @@ var contextUnlockCmd = &cobra.Command{
 
   stompy context unlock project/topic
   stompy context unlock _global/topic`,
-	Args: cobra.ExactArgs(1),
+	Args: exactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		project, topic, _, err := resolveTopicRef(args[0])
 		if err != nil {
@@ -272,7 +272,7 @@ var contextSearchCmd = &cobra.Command{
 	Long: `Hybrid semantic + keyword search over a project's contexts
 (GET /projects/{name}/search — the same route and ranking as MCP context_search).
 Same command as 'stompy search'.`,
-	Args: cobra.ExactArgs(1),
+	Args: exactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error { return runSearch(cmd, args[0]) },
 }
 
@@ -283,7 +283,7 @@ var contextUpdateCmd = &cobra.Command{
 
   stompy context update project/topic --content "..."
   stompy context update _global/topic --content "..."`,
-	Args: cobra.ExactArgs(1),
+	Args: exactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		project, topic, _, err := resolveTopicRef(args[0])
 		if err != nil {
@@ -321,7 +321,7 @@ var contextMoveCmd = &cobra.Command{
 
   stompy context move project/topic --to other-project
   stompy context move _global/topic --to my-project`,
-	Args: cobra.ExactArgs(1),
+	Args: exactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		project, topic, _, err := resolveTopicRef(args[0])
 		if err != nil {
@@ -537,7 +537,7 @@ func (r *RecallBatchResponse) UnmarshalJSON(b []byte) error {
 var contextBatchCmd = &cobra.Command{
 	Use:   "batch <topic1> <topic2> ...",
 	Short: "Fetch multiple contexts in one call",
-	Args:  cobra.MinimumNArgs(1),
+	Args:  minimumArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		project, err := getProject()
 		if err != nil {

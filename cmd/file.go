@@ -16,7 +16,7 @@ var fileCmd = &cobra.Command{
 var fileUploadCmd = &cobra.Command{
 	Use:   "upload <path>",
 	Short: "Upload a document",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		project, err := getProject()
 		if err != nil {
@@ -84,7 +84,7 @@ var fileListCmd = &cobra.Command{
 var fileGetCmd = &cobra.Command{
 	Use:   "get <id>",
 	Short: "Show file details",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		project, err := getProject()
 		if err != nil {
@@ -123,7 +123,7 @@ var fileGetCmd = &cobra.Command{
 var fileDeleteCmd = &cobra.Command{
 	Use:   "delete <id>",
 	Short: "Delete a file",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		project, err := getProject()
 		if err != nil {

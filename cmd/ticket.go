@@ -84,7 +84,7 @@ var ticketCreateCmd = &cobra.Command{
 var ticketGetCmd = &cobra.Command{
 	Use:   "get <id>",
 	Short: "Show ticket details",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		project, err := getProject()
 		if err != nil {
@@ -145,7 +145,7 @@ var ticketGetCmd = &cobra.Command{
 var ticketUpdateCmd = &cobra.Command{
 	Use:   "update <id>",
 	Short: "Update a ticket",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		project, err := getProject()
 		if err != nil {
@@ -208,7 +208,7 @@ var ticketUpdateCmd = &cobra.Command{
 var ticketMoveCmd = &cobra.Command{
 	Use:   "move <id>",
 	Short: "Transition a ticket to a new status",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		project, err := getProject()
 		if err != nil {
@@ -239,7 +239,7 @@ var ticketMoveCmd = &cobra.Command{
 var ticketCloseCmd = &cobra.Command{
 	Use:   "close <id>",
 	Short: "Close a ticket (infers terminal status from ticket type)",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		project, err := getProject()
 		if err != nil {
@@ -359,7 +359,7 @@ var ticketBoardCmd = &cobra.Command{
 var ticketSearchCmd = &cobra.Command{
 	Use:   "search <query>",
 	Short: "Search tickets",
-	Args:  cobra.ExactArgs(1),
+	Args:  exactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		project, err := getProject()
 		if err != nil {

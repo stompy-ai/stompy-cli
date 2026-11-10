@@ -16,7 +16,7 @@ var leaseShorts = map[string]string{
 
 func newTicketLeaseCmd(action string) *cobra.Command {
 	use := action + " <id>"
-	args := cobra.ExactArgs(1)
+	args := exactArgs(1)
 	if action == "claim-next" {
 		use = action
 		args = cobra.NoArgs

@@ -43,7 +43,7 @@ var projectSetMetadataCmd = &cobra.Command{
 	Long: `Set the project's elicited KG metadata. Omitted fields are unchanged; names
 passed to --clear are unset. The project defaults to the resolved project
 (-p, STOMPY_PROJECT, .stompy.yaml, default project).`,
-	Args: cobra.MaximumNArgs(1),
+	Args: maximumArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		project, _, err := sourceAndRest(args, 0)
 		if err != nil {
@@ -83,7 +83,7 @@ passed to --clear are unset. The project defaults to the resolved project
 var projectLinkCmd = &cobra.Command{
 	Use:   "link [source] <target>",
 	Short: "Relate one of your projects to another (directed, idempotent)",
-	Args:  cobra.RangeArgs(1, 2),
+	Args:  rangeArgs(1, 2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		source, rest, err := sourceAndRest(args, 1)
 		if err != nil {
@@ -121,7 +121,7 @@ var projectLinkCmd = &cobra.Command{
 var projectUnlinkCmd = &cobra.Command{
 	Use:   "unlink [source] <target>",
 	Short: "Remove relation(s) from a project to a target (0 removed is not an error)",
-	Args:  cobra.RangeArgs(1, 2),
+	Args:  rangeArgs(1, 2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		source, rest, err := sourceAndRest(args, 1)
 		if err != nil {
@@ -145,7 +145,7 @@ var projectUnlinkCmd = &cobra.Command{
 var projectLinksCmd = &cobra.Command{
 	Use:   "links [project]",
 	Short: "List the project's relations (both directions)",
-	Args:  cobra.MaximumNArgs(1),
+	Args:  maximumArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		project, _, err := sourceAndRest(args, 0)
 		if err != nil {
