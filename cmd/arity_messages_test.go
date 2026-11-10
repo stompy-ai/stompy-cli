@@ -47,3 +47,27 @@ func TestMissingArgumentNamesIt(t *testing.T) {
 		t.Fatalf("got %v", err)
 	}
 }
+
+// Real shipped commands, exact wording (review of #57).
+func TestRealCommandsNameWhatIsMissing(t *testing.T) {
+	cases := []struct {
+		path []string
+		args []string
+		want string
+	}{
+		{[]string{"context", "recall"}, nil, "missing <topic>: stompy context recall <topic>"},
+		{[]string{"context", "batch"}, nil, "missing <topic1>: stompy context batch <topic1> <topic2> ..."},
+		{[]string{"completion"}, nil, "missing bash|zsh|fish|powershell: stompy completion [bash|zsh|fish|powershell]"},
+		{[]string{"completion"}, []string{"fish", "x"}, "too many arguments (2 given): stompy completion [bash|zsh|fish|powershell]"},
+	}
+	for _, c := range cases {
+		cmd, _, err := rootCmd.Find(c.path)
+		if err != nil {
+			t.Fatalf("%v: %v", c.path, err)
+		}
+		got := cmd.Args(cmd, c.args)
+		if got == nil || got.Error() != c.want {
+			t.Errorf("%v %v: got %v, want %q", c.path, c.args, got, c.want)
+		}
+	}
+}

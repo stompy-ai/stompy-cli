@@ -18,20 +18,28 @@ func arity(min, max int) cobra.PositionalArgs {
 		if len(args) < min {
 			var required, named []string
 			for _, tok := range strings.Fields(usage) {
-				if strings.HasPrefix(tok, "-") || tok == "[flags]" {
+				if strings.HasPrefix(tok, "-") || tok == "[flags]" || tok == "..." {
 					continue
 				}
+				tok = strings.TrimSuffix(tok, "...")
 				named = append(named, tok)
 				if !strings.HasPrefix(tok, "[") {
 					required = append(required, tok)
 				}
 			}
 			if len(required) < min { // the Use line brackets a required argument
-				required = named
+				required = nil
+				for _, tok := range named {
+					required = append(required, strings.Trim(tok, "[]"))
+				}
 			}
 			missing := "an argument"
 			if len(args) < len(required) {
-				missing = strings.Join(required[len(args):], " ")
+				end := len(required)
+				if min < end { // name only what is required, not optional extras
+					end = min
+				}
+				missing = strings.Join(required[len(args):end], " ")
 			}
 			return fmt.Errorf("missing %s: %s", missing, show)
 		}
