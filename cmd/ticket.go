@@ -430,7 +430,7 @@ func init() {
 	ticketListCmd.Flags().Int("limit", 0, "Limit results")
 	ticketListCmd.Flags().Int("offset", 0, "Offset for pagination")
 
-	ticketBoardCmd.Flags().String("view", "summary", "Board view: kanban, summary")
+	ticketBoardCmd.Flags().String("view", "kanban", "Board view: kanban (tickets per column) or summary (counts only)")
 	ticketBoardCmd.Flags().String("type", "", "Filter by type")
 	ticketBoardCmd.Flags().String("status", "", "Filter by status")
 
