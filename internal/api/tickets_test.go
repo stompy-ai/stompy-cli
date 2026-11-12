@@ -30,7 +30,7 @@ func TestListTickets(t *testing.T) {
 	defer srv.Close()
 
 	c := NewClient(srv.URL, "tok", "dev", false)
-	resp, err := c.ListTickets("proj", "open", "", "", 0, 0)
+	resp, err := c.ListTickets("proj", "open", "", "", "", 0, 0)
 	if err != nil {
 		t.Fatalf("ListTickets() error: %v", err)
 	}
@@ -106,7 +106,7 @@ func TestListTickets_StatusFilterHonored(t *testing.T) {
 	defer srv.Close()
 
 	c := NewClient(srv.URL, "tok", "dev", false)
-	resp, err := c.ListTickets("proj", "resolved", "", "", 0, 0)
+	resp, err := c.ListTickets("proj", "resolved", "", "", "", 0, 0)
 	if err != nil {
 		t.Fatalf("ListTickets() error: %v", err)
 	}
@@ -419,7 +419,7 @@ func TestListTickets_Error(t *testing.T) {
 	defer srv.Close()
 
 	c := NewClient(srv.URL, "tok", "dev", false)
-	_, err := c.ListTickets("proj", "", "", "", 0, 0)
+	_, err := c.ListTickets("proj", "", "", "", "", 0, 0)
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}

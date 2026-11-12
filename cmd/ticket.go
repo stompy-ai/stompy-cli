@@ -274,10 +274,11 @@ var ticketListCmd = &cobra.Command{
 		status, _ := cmd.Flags().GetString("status")
 		ticketType, _ := cmd.Flags().GetString("type")
 		priority, _ := cmd.Flags().GetString("priority")
+		assignee, _ := cmd.Flags().GetString("assignee")
 		limit, _ := cmd.Flags().GetInt("limit")
 		offset, _ := cmd.Flags().GetInt("offset")
 
-		resp, err := apiClient.ListTickets(project, status, ticketType, priority, limit, offset)
+		resp, err := apiClient.ListTickets(project, status, ticketType, priority, assignee, limit, offset)
 		if err != nil {
 			return err
 		}
@@ -425,6 +426,7 @@ func init() {
 	ticketListCmd.Flags().String("status", "", "Filter by status")
 	ticketListCmd.Flags().String("type", "", "Filter by type")
 	ticketListCmd.Flags().String("priority", "", "Filter by priority")
+	ticketListCmd.Flags().String("assignee", "", "Filter by assignee (case-insensitive)")
 	ticketListCmd.Flags().Int("limit", 0, "Limit results")
 	ticketListCmd.Flags().Int("offset", 0, "Offset for pagination")
 
