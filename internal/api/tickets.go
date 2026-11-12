@@ -155,8 +155,12 @@ type TransitionRequest struct {
 	Status string `json:"status"`
 }
 
-func (c *Client) ListTickets(project string, status, ticketType, priority string, limit, offset int) (*TicketListResponse, error) {
+func (c *Client) ListTickets(project string, status, ticketType, priority, assignee string, limit, offset int) (*TicketListResponse, error) {
 	params := url.Values{}
+	if assignee != "" {
+		// STOMPY-3551: matched trimmed and case-insensitively by the server, as on MCP.
+		params.Set("assignee", assignee)
+	}
 	if status != "" {
 		// STOMPY-2526: list_project_tickets (src/api/routes/tickets.py) has no
 		// status query param — it groups tickets into board columns and hides

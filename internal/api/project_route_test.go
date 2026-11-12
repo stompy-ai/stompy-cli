@@ -52,7 +52,7 @@ func TestEveryProjectRouteSendsOwnerForQualifiedAddress(t *testing.T) {
 		"MoveContext":         func(c *Client, p string) { _, _ = c.MoveContext(p, "t", "other") },
 		"SetContextLifecycle": func(c *Client, p string) { _, _ = c.SetContextLifecycle(p, "t", ContextLifecycleRequest{}) },
 		"Search":              func(c *Client, p string) { _, _ = c.Search(p, "q", 5) },
-		"ListTickets":         func(c *Client, p string) { _, _ = c.ListTickets(p, "", "", "", 0, 0) },
+		"ListTickets":         func(c *Client, p string) { _, _ = c.ListTickets(p, "", "", "", "", 0, 0) },
 		"GetTicket":           func(c *Client, p string) { _, _ = c.GetTicket(p, 1) },
 		"CreateTicket":        func(c *Client, p string) { _, _ = c.CreateTicket(p, TicketCreate{}) },
 		"UpdateTicket":        func(c *Client, p string) { _, _ = c.UpdateTicket(p, 1, TicketUpdate{}) },
