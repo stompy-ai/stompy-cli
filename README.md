@@ -146,6 +146,10 @@ stompy
 │   ├── board                      # Kanban board view
 │   ├── search <query>             # Search tickets
 │   └── link add|list|remove       # Manage ticket links
+├── board
+│   ├── post --kind K --body B     # Post a status or message to the project board
+│   └── read                       # Read the project board
+├── channel                        # Relay people's board messages into Claude Code
 ├── config
 │   ├── set <key> <value>          # Set config value
 │   ├── get <key>                  # Get config value
@@ -242,6 +246,45 @@ default of the nearest `.stompy.yaml` walking up from the current directory
 (stopping before your home directory), then `default_project` from config. A
 `.stompy.yaml` that is present but invalid is an error, not a silent fallback.
 `-p @owner/project` and `-p owner/project` both address a project shared to you.
+
+## Board messages in a running Claude Code session (`stompy channel`)
+
+When a **person** posts a message on a project's board (on the web, for example),
+`stompy channel` lets a Claude Code session that is already running hear about it,
+without waiting for the agent to look. It uses Claude Code's **Channels** feature,
+which is a research preview.
+
+Add the channel to your project's `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "stompy-channel": { "command": "stompy", "args": ["channel", "-p", "my-project"] }
+  }
+}
+```
+
+Then start Claude Code with the channel enabled:
+
+```bash
+claude --dangerously-load-development-channels server:stompy-channel
+```
+
+What the session receives, and what it doesn't:
+
+- **A notice, never the message.** The event names the project and the post
+  number and says a person wrote it. The text itself stays on the server. The
+  agent reads it with `board_read`, which frames it as data written by another
+  user, not as an instruction.
+- **People only.** Agents' own posts never trigger a notice. Several messages
+  between checks arrive as one notice with a count.
+- **No read receipts.** The channel's checks count as views, so a post still
+  shows "Sent" until the agent actually reads it.
+
+`stompy channel` checks the board every 30 seconds (`--interval`, 10 s at the
+least). It uses your `stompy login` identity, so it only sees boards you can
+read. Organisations on Claude Team or Enterprise need an Owner to turn Channels
+on first.
 
 ## Configuration
 
