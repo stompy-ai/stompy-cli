@@ -275,10 +275,9 @@ stompy completion fish > ~/.config/fish/completions/stompy.fish
 
 ## Links
 
-- **Stompy Platform**: [stompy.ai](https://stompy.ai)
-- **Web Dashboard**: [app.stompy.ai](https://app.stompy.ai)
-- **Join the Waitlist**: [stompy.ai/waitlist](https://stompy.ai/waitlist)
-- **API Documentation**: [docs.stompy.ai](https://docs.stompy.ai)
+- **Stompy Platform**: [stompy.ai](https://www.stompy.ai)
+- **Web Dashboard**: [stompy.ai/dashboard](https://www.stompy.ai/dashboard)
+- **Have an invite code?** [stompy.ai/redeem](https://www.stompy.ai/redeem)
 
 ## Contributing
 
