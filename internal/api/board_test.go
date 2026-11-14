@@ -59,3 +59,20 @@ func TestReadBoardCarriesFiltersAndServerWeights(t *testing.T) {
 		t.Fatalf("response: %#v", result)
 	}
 }
+
+// A relay is not the agent: its reads are views, never agent-read evidence (3182).
+func TestViewBoardReadsMessagesAsAView_1597(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		q := r.URL.Query()
+		if r.URL.Path != "/projects/mine/board" || q.Get("view") != "true" || q.Get("kinds") != "message" || q.Get("since") != "2026-11-14T20:00:00Z" {
+			t.Errorf("wrong read: %s", r.URL.String())
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{"project": "mine", "posts": []map[string]interface{}{{"id": 3, "author_kind": "human"}}})
+	}))
+	defer srv.Close()
+	got, err := NewClient(srv.URL, "tok", "dev", false).ViewBoard("mine", "2026-11-14T20:00:00Z")
+	if err != nil || len(got.Posts) != 1 || got.Posts[0].AuthorKind != "human" {
+		t.Fatalf("%v %#v", err, got)
+	}
+}

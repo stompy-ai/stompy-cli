@@ -88,3 +88,21 @@ func (c *Client) ReadBoard(project, since, kinds string, limit int) (*BoardReadR
 func boardPath(project string) (string, url.Values) {
 	return projectPath(project, "/board"), url.Values{}
 }
+
+// ViewBoard reads message posts as a VIEW (view=true, STOMPY-3182): a relay that
+// is not the agent must never leave agent-read evidence, which keeps posts
+// visible to agents. Used by `stompy channel`.
+func (c *Client) ViewBoard(project, since string) (*BoardReadResponse, error) {
+	path, params := boardPath(project)
+	params.Set("limit", "100")
+	params.Set("kinds", "message")
+	params.Set("view", "true")
+	if since != "" {
+		params.Set("since", since)
+	}
+	var response BoardReadResponse
+	if err := c.Get(path, params, &response); err != nil {
+		return nil, err
+	}
+	return &response, nil
+}
