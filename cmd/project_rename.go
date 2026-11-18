@@ -38,9 +38,7 @@ var projectRenameCmd = &cobra.Command{
 		if !result.Success || result.Name == "" || result.SchemaName != before.SchemaName {
 			return fmt.Errorf("rename outcome is unverifiable; inspect project info before another mutation")
 		}
-		if result.MetadataSync == "pending" {
-			fmt.Fprintln(os.Stderr, "Rename committed; metadata synchronization is pending. Do not repeat the rename.")
-		}
+		warnPendingNameWrite(result)
 		aliases, err := verifyProjectName(args[0], before, result)
 		if err != nil {
 			return fmt.Errorf("rename committed but readback is unverified; use project info to verify, do not repeat the rename: %w", err)
@@ -95,8 +93,17 @@ func printVerifiedName(result *api.ProjectNameResult, aliases []string) error {
 	if result.MetadataSync != "" {
 		fields = append(fields, output.KeyValue{Key: "Metadata sync", Value: result.MetadataSync})
 	}
+	if result.ReleasedAlias != "" {
+		fields = append(fields, output.KeyValue{Key: "Released alias", Value: result.ReleasedAlias})
+	}
 	fmt.Print(getFormatter().FormatSingle(fields))
 	return nil
+}
+
+func warnPendingNameWrite(result *api.ProjectNameResult) {
+	if result.MetadataSync == "pending" {
+		fmt.Fprintln(os.Stderr, "Project name change committed; metadata synchronization is pending. Do not repeat the mutation.")
+	}
 }
 
 func init() { projectCmd.AddCommand(projectRenameCmd) }

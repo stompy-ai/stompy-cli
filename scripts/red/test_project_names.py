@@ -104,3 +104,35 @@ def test_release_must_not_retry(results):
 
 def test_existing_read_retry_control(results):
     proved(results, "TestClient_Do_RetriesOn502")
+
+
+def test_release_round_trip_and_binding(results):
+    proved(results, "Test3709ReleaseQualifiedRoundTrip", "Test3709ReleaseUsesMarkerBindingWithoutRewriting")
+
+
+def test_release_requires_confirmation(results):
+    proved(results, "Test3709ReleaseNeedsConfirmationBeforeNetwork")
+
+
+def test_release_retained_alias_refused(results):
+    proved(results, "Test3709ReleaseRetainedAliasCannotVerify")
+
+
+def test_release_changed_readback_refused(results):
+    proved(results, "Test3709ReleaseRejectsChangedReadback")
+
+
+def test_release_refusal_control(results):
+    proved(results, "Test3709ReleaseRefusalControl", "Test3709ReleaseEmptyProjectNoNetwork")
+
+
+def test_aliases_current_sorted_and_empty(results):
+    proved(results, "Test3709AliasesQualifiedSortedAndCurrentName", "Test3709AliasesEmptyIsExplicit")
+
+
+def test_aliases_unverifiable_list_refused(results):
+    proved(results, "Test3709AliasesMissingEvidenceNotEmpty")
+
+
+def test_aliases_owner_refusal_control(results):
+    proved(results, "Test3709AliasesRefusalNotEmpty", "Test3709AliasesArityNoNetwork")
