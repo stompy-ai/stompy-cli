@@ -35,6 +35,12 @@ var rootCmd = &cobra.Command{
 	SilenceErrors: true,
 	SilenceUsage:  true,
 	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		if err := config.Load(); err != nil {
+			return err
+		}
+		if err := validateOutputFormat(); err != nil {
+			return err
+		}
 		// Fire off async version check (non-blocking, result printed in PostRun)
 		go func() {
 			if latest := update.CheckForUpdate(Version, config.GetConfigDir()); latest != "" {
@@ -44,11 +50,7 @@ var rootCmd = &cobra.Command{
 		}()
 
 		if !commandNeedsAuth(cmd.CommandPath(), cmd.Name(), cmd.HasParent(), cmd.HasSubCommands() && len(args) == 0) {
-			return config.Load()
-		}
-
-		if err := config.Load(); err != nil {
-			return err
+			return nil
 		}
 
 		token, err := resolveAuthToken()
@@ -209,14 +211,6 @@ func getProject() (string, error) {
 // getFormatter returns the output formatter based on flags and config.
 func getFormatter() output.Formatter {
 	return output.NewFormatter(getOutputFormat())
-}
-
-// getOutputFormat returns the resolved output format string.
-func getOutputFormat() string {
-	if flagOutput != "" {
-		return flagOutput
-	}
-	return config.GetOutputFormat()
 }
 
 // isTableOutput returns true when output format is table (colors allowed).
