@@ -41,7 +41,7 @@ var projectRenameCmd = &cobra.Command{
 		if result.MetadataSync == "pending" {
 			fmt.Fprintln(os.Stderr, "Rename committed; metadata synchronization is pending. Do not repeat the rename.")
 		}
-		aliases, err := verifyProjectName(args[0], result)
+		aliases, err := verifyProjectName(args[0], before, result)
 		if err != nil {
 			return fmt.Errorf("rename committed but readback is unverified; use project info to verify, do not repeat the rename: %w", err)
 		}
@@ -50,7 +50,7 @@ var projectRenameCmd = &cobra.Command{
 }
 
 func usableNameSnapshot(p *api.ProjectResponse) error {
-	if p.Name == "" || p.SchemaName == "" || p.EnrichmentWarning != "" {
+	if p.Name == "" || p.SchemaName == "" || p.CreatedAt.IsZero() || p.EnrichmentWarning != "" {
 		return fmt.Errorf("project identity/display is unverifiable; no name mutation was sent")
 	}
 	return nil
@@ -64,7 +64,7 @@ func scopedName(address, newName string) string {
 	return newName
 }
 
-func verifyProjectName(address string, result *api.ProjectNameResult) ([]string, error) {
+func verifyProjectName(address string, before *api.ProjectResponse, result *api.ProjectNameResult) ([]string, error) {
 	currentAddress := scopedName(address, result.Name)
 	current, err := apiClient.GetProject(currentAddress, false)
 	if err != nil {
@@ -72,6 +72,9 @@ func verifyProjectName(address string, result *api.ProjectNameResult) ([]string,
 	}
 	if current.Name != result.Name || current.SchemaName != result.SchemaName || current.NowCalled != "" || current.EnrichmentWarning != "" {
 		return nil, fmt.Errorf("project identity or current name changed")
+	}
+	if !current.CreatedAt.Equal(before.CreatedAt) {
+		return nil, fmt.Errorf("project was deleted and recreated")
 	}
 	aliases, err := apiClient.GetProjectAliases(currentAddress)
 	if err != nil {

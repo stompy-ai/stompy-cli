@@ -26,13 +26,13 @@ func renameHandler3709(mode string) http.HandlerFunc {
 		case strings.HasSuffix(r.URL.Path, "/aliases"):
 			fmt.Fprint(w, `{"name":"current","schema_name":"physical_old","aliases":["old"]}`)
 		case r.URL.Path == "/projects/old":
-			fmt.Fprint(w, `{"name":"old","schema_name":"physical_old","role":"owner"}`)
+			fmt.Fprint(w, `{"name":"old","schema_name":"physical_old","created_at":"2026-11-17T00:00:00Z","role":"owner"}`)
 		default:
 			physical := "physical_old"
 			if mode == "recreated" {
 				physical = "different"
 			}
-			fmt.Fprintf(w, `{"name":"current","schema_name":%q,"role":"owner"}`, physical)
+			fmt.Fprintf(w, `{"name":"current","schema_name":%q,"created_at":"2026-11-17T00:00:00Z","role":"owner"}`, physical)
 		}
 	}
 }
@@ -158,5 +158,22 @@ func Test3709RenameLaterNameDoesNotBecomeSuccess(t *testing.T) {
 	}, "project", "rename", "old", "current")
 	if err == nil || !strings.Contains(err.Error(), "committed") {
 		t.Fatalf("later rename was accepted: %v", err)
+	}
+}
+
+func Test3709RenameSameSchemaRecreateCannotVerify(t *testing.T) {
+	out, _, err := runCLI(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == "GET" && r.URL.Path == "/projects/old" {
+			fmt.Fprint(w, `{"name":"old","schema_name":"physical_old","created_at":"2026-11-17T00:00:00Z","role":"owner"}`)
+			return
+		}
+		if r.Method == "GET" && r.URL.Path == "/projects/current" {
+			fmt.Fprint(w, `{"name":"current","schema_name":"physical_old","created_at":"2026-11-18T00:00:00Z","role":"owner"}`)
+			return
+		}
+		renameHandler3709("complete")(w, r)
+	}, "project", "rename", "old", "current")
+	if err == nil || !strings.Contains(err.Error(), "committed") || out != "" {
+		t.Fatalf("recreated physical spelling was accepted: %v %s", err, out)
 	}
 }

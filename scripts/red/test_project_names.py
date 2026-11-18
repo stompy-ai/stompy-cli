@@ -70,6 +70,10 @@ def test_recreated_name_cannot_verify(results):
     proved(results, "Test3709RenameRecreateRefusesVerifiedSuccess")
 
 
+def test_recreated_schema_cannot_verify(results):
+    proved(results, "Test3709RenameSameSchemaRecreateCannotVerify")
+
+
 def test_later_name_cannot_verify(results):
     proved(results, "Test3709RenameLaterNameDoesNotBecomeSuccess")
 
