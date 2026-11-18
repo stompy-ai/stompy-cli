@@ -22,6 +22,8 @@ type checkRow struct {
 	Reason      string `json:"reason,omitempty"`
 	CallerRole  string `json:"caller_role,omitempty"`
 	Environment string `json:"environment"`
+	NowCalled   string `json:"now_called,omitempty"`
+	MarkerLine  string `json:"marker_line,omitempty"`
 }
 
 var projectCheckCmd = &cobra.Command{
@@ -58,6 +60,15 @@ Exit codes: 0 all resolve, 1 at least one does not, 2 missing/invalid file.`,
 			switch {
 			case err == nil:
 				row.Status, row.CallerRole = "ok", resp.Role
+				if resp.NowCalled != "" {
+					address, noticeErr := checkedRenamedAddress(p.Address, resp)
+					if noticeErr != nil {
+						row.Status, row.Reason, failed = "error", noticeErr.Error(), true
+					} else {
+						row.Status, row.NowCalled = "renamed", address
+						row.MarkerLine = fmt.Sprintf("  - address: %q", address)
+					}
+				}
 			default:
 				failed = true
 				var apiErr *api.APIError
@@ -98,13 +109,16 @@ Exit codes: 0 all resolve, 1 at least one does not, 2 missing/invalid file.`,
 }
 
 func renderCheckLine(r checkRow) string {
-	label := map[string]string{"ok": "OK", "not_found": "NOT FOUND", "unauthorized": "UNAUTHORIZED", "error": "ERROR"}[r.Status]
+	label := map[string]string{"ok": "OK", "renamed": "RENAMED", "not_found": "NOT FOUND", "unauthorized": "UNAUTHORIZED", "error": "ERROR"}[r.Status]
 	line := fmt.Sprintf("%-12s %s [%s, %s]", label, r.Address, r.Role, r.Environment)
 	if r.Status == "ok" && r.CallerRole != "" {
 		line += " (you: " + r.CallerRole + ")"
 	}
 	if r.Reason != "" {
 		line += ": " + r.Reason
+	}
+	if r.Status == "renamed" {
+		line += fmt.Sprintf("\n  Warning: now called %q. In .stompy.yaml replace this entry's address line with:\n%s", r.NowCalled, r.MarkerLine)
 	}
 	return line
 }

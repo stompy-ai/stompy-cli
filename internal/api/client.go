@@ -51,6 +51,12 @@ func NewClient(baseURL, authToken, version string, verbose bool) *Client {
 }
 
 func (c *Client) Do(method, path string, body any, params url.Values) ([]byte, int, error) {
+	return c.do(method, path, body, params, true)
+}
+
+// allowRetries is false only for a name release: a timed-out DELETE may have
+// committed, and a later same-name alias must never be deleted by a retry.
+func (c *Client) do(method, path string, body any, params url.Values, allowRetries bool) ([]byte, int, error) {
 	if emptyProjectSegment(path) {
 		return nil, 0, errEmptyProject
 	}
@@ -84,7 +90,7 @@ func (c *Client) Do(method, path string, body any, params url.Values) ([]byte, i
 	}
 
 	retries := 0
-	if isIdempotent(method) {
+	if allowRetries && isIdempotent(method) {
 		retries = maxRetries
 	}
 
@@ -211,6 +217,7 @@ func (c *Client) Do(method, path string, body any, params url.Values) ([]byte, i
 		}
 
 		printUsageWarning(respBody)
+		printProjectNotice(respBody)
 		return respBody, resp.StatusCode, nil
 	}
 
