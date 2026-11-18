@@ -11,7 +11,7 @@ type ProjectNameResult struct {
 	Success       bool   `json:"success"`
 	Name          string `json:"name"`
 	SchemaName    string `json:"schema_name"`
-	Changed       bool   `json:"changed"`
+	Changed       *bool  `json:"changed,omitempty"`
 	MetadataSync  string `json:"metadata_sync,omitempty"`
 	ReleasedAlias string `json:"released_alias,omitempty"`
 }
