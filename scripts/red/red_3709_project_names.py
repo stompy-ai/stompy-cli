@@ -20,10 +20,12 @@ CONTROLS = {PREFIX + name for name in (
 REVERTS = [
     ("omit_successful_alias_notice", "internal/api/project_notice.go",
      'envelope.NowCalled == ""', 'len(envelope.NowCalled) >= 0',
-     {"test_notice_on_every_rest_command", "test_notice_quotes_untrusted_text"}),
+     {"test_notice_on_every_rest_command", "test_notice_quotes_untrusted_text",
+      "test_multipart_notice_not_swallowed", "test_MCP_JSON_notice_not_swallowed"}),
     ("render_server_text_unquoted", "internal/api/project_notice.go",
      'Project is now called %q.', 'Project is now called %s.',
-     {"test_notice_on_every_rest_command", "test_notice_quotes_untrusted_text"}),
+     {"test_notice_on_every_rest_command", "test_notice_quotes_untrusted_text",
+      "test_multipart_notice_not_swallowed", "test_MCP_JSON_notice_not_swallowed"}),
     ("ignore_rename_marker_evidence", "cmd/project_check.go",
      'if resp.NowCalled != "" {', 'if false && resp.NowCalled != "" {',
      {"test_marker_correction_and_qualified_scope", "test_personal_marker_correction",
@@ -67,6 +69,12 @@ REVERTS = [
     ("render_missing_alias_list_as_empty", "cmd/project_aliases.go",
      'result.Aliases == nil', 'false && result.Aliases == nil',
      {"test_aliases_unverifiable_list_refused"}),
+    ("drop_multipart_alias_notice", "internal/api/files.go",
+     'printProjectNotice(respBody)', 'if false { printProjectNotice(respBody) }',
+     {"test_multipart_notice_not_swallowed"}),
+    ("drop_MCP_JSON_alias_notice", "internal/api/mcp.go",
+     'printProjectNotice(text)', 'if false { printProjectNotice(text) }',
+     {"test_MCP_JSON_notice_not_swallowed"}),
 ]
 
 

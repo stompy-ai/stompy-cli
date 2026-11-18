@@ -199,7 +199,9 @@ func (m *MCPClient) CallTool(toolName string, arguments map[string]any) (string,
 
 	// The text may itself be JSON carrying \u001b escapes the outer strip read as
 	// literal text, so it is stripped again once decoded (STOMPY-3502).
-	return string(stripControls([]byte(stripRecap(strings.Join(texts, "\n"))))), nil
+	text := stripControls([]byte(stripRecap(strings.Join(texts, "\n"))))
+	printProjectNotice(text)
+	return string(text), nil
 }
 
 // NonJSONToolResult is returned by CallToolTyped when the server answered

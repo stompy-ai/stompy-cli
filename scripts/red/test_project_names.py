@@ -48,6 +48,14 @@ def test_notice_quotes_untrusted_text(results):
     proved(results, "Test3709AliasNoticeQuotesTerminalText")
 
 
+def test_multipart_notice_not_swallowed(results):
+    proved(results, "Test3709MultipartAliasNotice")
+
+
+def test_MCP_JSON_notice_not_swallowed(results):
+    proved(results, "Test3709MCPJSONAliasNotice")
+
+
 def test_authored_data_and_refusal_control(results):
     proved(results, "Test3709AliasNoticeIgnoresRefusalsAndAuthoredData")
 

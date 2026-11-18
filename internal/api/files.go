@@ -164,6 +164,7 @@ func (c *Client) UploadFile(project, filePath, label string) (*FileUploadRespons
 		return nil, apiErr
 	}
 
+	printProjectNotice(respBody)
 	var fileResp FileUploadResponse
 	if err := json.Unmarshal(respBody, &fileResp); err != nil {
 		return nil, fmt.Errorf("decoding upload response: %w", err)

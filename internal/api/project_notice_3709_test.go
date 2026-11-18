@@ -1,9 +1,12 @@
 package api
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -57,5 +60,54 @@ func Test3709AliasNoticeQuotesTerminalText(t *testing.T) {
 	stderr := captureStderr(t, func() { _, _, _ = NewClient(srv.URL, "tok", "dev", false).Do(http.MethodGet, "/test", nil, nil) })
 	if strings.Count(stderr, "\n") != 1 || !strings.Contains(stderr, `current\nFORGED`) {
 		t.Fatalf("untrusted multiline notice: %q", stderr)
+	}
+}
+
+func Test3709MultipartAliasNotice(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "note.txt")
+	if err := os.WriteFile(path, []byte("local fixture"), 0600); err != nil {
+		t.Fatal(err)
+	}
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("owner") != "alice" || r.Header.Get("Authorization") != "Bearer tok" {
+			t.Error("owner/auth scope lost")
+		}
+		if err := r.ParseMultipartForm(4096); err != nil {
+			t.Error(err)
+		}
+		defer r.MultipartForm.RemoveAll()
+		fmt.Fprint(w, `{"id":7,"title":"note","renamed_from":"@alice/old","now_called":"@alice/current"}`)
+	}))
+	defer srv.Close()
+	stderr := captureStderr(t, func() {
+		result, err := NewClient(srv.URL, "tok", "dev", false).UploadFile("@alice/old", path, "note")
+		if err != nil || result.ID != 7 || result.Title != "note" {
+			t.Fatalf("upload changed: %+v %v", result, err)
+		}
+	})
+	if !strings.Contains(stderr, `now called "@alice/current"`) || strings.Count(stderr, "\n") != 1 {
+		t.Fatalf("multipart notice missing: %q", stderr)
+	}
+}
+
+func Test3709MCPJSONAliasNotice(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer tok" {
+			t.Error("authentication lost")
+		}
+		json.NewEncoder(w).Encode(map[string]any{"jsonrpc": "2.0", "id": 1, "result": map[string]any{"content": []map[string]string{{"type": "text", "text": `{"summary":"unchanged authored data","renamed_from":"@alice/old","now_called":"@alice/current"}`}}}})
+	}))
+	defer srv.Close()
+	stderr := captureStderr(t, func() {
+		var result struct {
+			Summary string `json:"summary"`
+		}
+		err := NewMCPClient(srv.URL, "tok", "dev", false).CallToolTyped("project_brief", map[string]any{"project": "alice/old"}, &result)
+		if err != nil || result.Summary != "unchanged authored data" {
+			t.Fatalf("MCP decode changed: %+v %v", result, err)
+		}
+	})
+	if !strings.Contains(stderr, `now called "@alice/current"`) || strings.Count(stderr, "\n") != 1 {
+		t.Fatalf("typed MCP swallowed notice: %q", stderr)
 	}
 }
