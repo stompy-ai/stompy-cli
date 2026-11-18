@@ -22,13 +22,16 @@ type ProjectStats struct {
 }
 
 type ProjectResponse struct {
-	Name        string        `json:"name"`
-	SchemaName  string        `json:"schema_name"`
-	CreatedAt   time.Time     `json:"created_at"`
-	Role        string        `json:"role"`
-	IsSystem    bool          `json:"is_system"`
-	Description *string       `json:"description,omitempty"`
-	Stats       *ProjectStats `json:"stats,omitempty"`
+	RenamedFrom       string        `json:"renamed_from,omitempty"`
+	NowCalled         string        `json:"now_called,omitempty"`
+	EnrichmentWarning string        `json:"enrichment_warning,omitempty"`
+	Name              string        `json:"name"`
+	SchemaName        string        `json:"schema_name"`
+	CreatedAt         time.Time     `json:"created_at"`
+	Role              string        `json:"role"`
+	IsSystem          bool          `json:"is_system"`
+	Description       *string       `json:"description,omitempty"`
+	Stats             *ProjectStats `json:"stats,omitempty"`
 }
 
 type ProjectListResponse struct {

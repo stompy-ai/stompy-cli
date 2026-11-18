@@ -211,6 +211,7 @@ func (c *Client) Do(method, path string, body any, params url.Values) ([]byte, i
 		}
 
 		printUsageWarning(respBody)
+		printProjectNotice(respBody)
 		return respBody, resp.StatusCode, nil
 	}
 
