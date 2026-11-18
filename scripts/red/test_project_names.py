@@ -21,6 +21,16 @@ def results():
     statuses = {e["Test"]: e["Action"] for e in events
                 if "Test" in e and e["Action"] in {"pass", "fail", "skip"}}
     assert statuses and not any(e.get("Action") == "build-fail" for e in events), run.stdout + run.stderr
+    packages = {e["Package"] for e in events
+                if "Test" not in e and e.get("Action") in {"pass", "fail"}}
+    assert packages == {"github.com/stompy-ai/stompy-cli/cmd",
+                        "github.com/stompy-ai/stompy-cli/internal/api"}, run.stdout + run.stderr
+    failed_packages = {e["Package"] for e in events
+                       if "Test" not in e and e.get("Action") == "fail"}
+    failed_tests = {e["Package"] for e in events
+                    if "Test" in e and e.get("Action") == "fail"}
+    assert failed_packages == failed_tests, "package failure outside a test: " + run.stdout + run.stderr
+    assert "skip" not in statuses.values(), run.stdout + run.stderr
     return statuses, run.stdout + run.stderr
 
 
