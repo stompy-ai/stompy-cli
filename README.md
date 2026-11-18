@@ -123,6 +123,9 @@ stompy
 │   ├── create <name>              # Create project
 │   ├── list [--stats]             # List all projects
 │   ├── info <name> [--stats]      # Project details
+│   ├── rename <name> <new>        # Rename your project; old links keep forwarding
+│   ├── aliases <name>             # List live old names (owner only)
+│   ├── release-name <alias>       # Stop forwarding; requires -p PROJECT --confirm
 │   ├── delete <name> --confirm    # Delete project
 │   ├── use <name>                 # Set default project
 │   └── check                      # Verify .stompy.yaml projects resolve for you
@@ -237,9 +240,27 @@ outside the block is never touched). It is generated from `.stompy.yaml`, naming
 the exact `project=` address(es) to pass, the default, the roles and the
 environment. Handles and project names are visible to anyone who can read the repo.
 
-`stompy project check` prints OK / NOT FOUND / UNAUTHORIZED per address and
+`stompy project check` prints OK / RENAMED / NOT FOUND / UNAUTHORIZED per address and
 exits 0 only if all resolve, 1 otherwise, 2 for a missing or invalid file
-(`-o json` supported).
+(`-o json` supported). A renamed binding still resolves and exits 0 with a warning
+and the exact replacement `address:` line. The command never rewrites the file.
+
+Owners can manage public project names without changing the physical schema:
+
+```bash
+stompy project rename @owner/old_name current_name
+stompy project aliases @owner/current_name
+stompy project release-name old_name -p @owner/current_name --confirm
+```
+
+A rename keeps the old name forwarding until its owner releases it. Releasing
+means old links stop working. Rename and release read back the current project
+and its live aliases before reporting verified success. Pending metadata sync
+is a committed rename with a warning. If verification fails, inspect `project
+info` and `project aliases` before another mutation; the CLI does not implicitly
+repeat the write. REST alias notices go to stderr, keeping JSON stdout usable.
+`list` and `info` retain their single-request behavior; `aliases` is the explicit
+owner-only live listing, and a refusal is never shown as an empty list.
 
 Project resolution order: `-p/--project` flag, then `STOMPY_PROJECT`, then the
 default of the nearest `.stompy.yaml` walking up from the current directory
