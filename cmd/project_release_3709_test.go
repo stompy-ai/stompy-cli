@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -60,6 +61,13 @@ func Test3709ReleaseQualifiedRoundTrip(t *testing.T) {
 	}
 	if !strings.Contains(out, `"released_alias": "old"`) || !strings.Contains(out, `"verified": true`) {
 		t.Fatalf("missing verified release: %s", out)
+	}
+	var receipt map[string]any
+	if json.Unmarshal([]byte(out), &receipt) != nil {
+		t.Fatal(out)
+	}
+	if _, invented := receipt["changed"]; invented {
+		t.Fatalf("release invented a changed receipt flag: %s", out)
 	}
 }
 
