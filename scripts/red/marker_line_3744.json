@@ -1,0 +1,111 @@
+{
+  "tests": "scripts/red/test_marker_line_3744.py",
+  "prefix": "scripts.red.test_marker_line_3744::",
+  "controls": [
+    "test_canonical_control_has_no_replacement_and_never_writes",
+    "test_invalid_marker_control_refuses_before_network_and_never_writes"
+  ],
+  "reverts": [
+    {
+      "name": "hardcode_two_space_list_prefix",
+      "path": "internal/repomarker/replacement.go",
+      "before": "prefix := string(line[:start])",
+      "after": "prefix := \"  - address: \"",
+      "failed": [
+        "test_CRLF_correction_pastes_without_changing_line_endings",
+        "test_each_correction_is_bound_to_its_own_entry",
+        "test_handwritten_correction_preserves_layout[False-\"-@alice/old-2]",
+        "test_handwritten_correction_preserves_layout[False-\"-@alice/old-4]",
+        "test_handwritten_correction_preserves_layout[False-\"-old-2]",
+        "test_handwritten_correction_preserves_layout[False-\"-old-4]",
+        "test_handwritten_correction_preserves_layout[False-'-@alice/old-2]",
+        "test_handwritten_correction_preserves_layout[False-'-@alice/old-4]",
+        "test_handwritten_correction_preserves_layout[False-'-old-2]",
+        "test_handwritten_correction_preserves_layout[False-'-old-4]",
+        "test_handwritten_correction_preserves_layout[False--alice/old-2]",
+        "test_handwritten_correction_preserves_layout[False--alice/old-4]",
+        "test_handwritten_correction_preserves_layout[False--old-2]",
+        "test_handwritten_correction_preserves_layout[False--old-4]",
+        "test_handwritten_correction_preserves_layout[True-\"-@alice/old-4]",
+        "test_handwritten_correction_preserves_layout[True-\"-old-4]",
+        "test_handwritten_correction_preserves_layout[True-'-@alice/old-4]",
+        "test_handwritten_correction_preserves_layout[True-'-old-4]",
+        "test_handwritten_correction_preserves_layout[True--alice/old-4]",
+        "test_handwritten_correction_preserves_layout[True--old-4]",
+        "test_init_written_marker_correction_pastes_and_rechecks[@alice/old]",
+        "test_init_written_marker_correction_pastes_and_rechecks[old]"
+      ]
+    },
+    {
+      "name": "discard_original_quoting_style",
+      "path": "internal/repomarker/replacement.go",
+      "before": "switch scalar.Style {",
+      "after": "switch yaml.Style(0) {",
+      "failed": [
+        "test_CRLF_correction_pastes_without_changing_line_endings",
+        "test_each_correction_is_bound_to_its_own_entry",
+        "test_handwritten_correction_preserves_layout[False-\"-@alice/old-2]",
+        "test_handwritten_correction_preserves_layout[False-\"-@alice/old-4]",
+        "test_handwritten_correction_preserves_layout[False-\"-old-2]",
+        "test_handwritten_correction_preserves_layout[False-\"-old-4]",
+        "test_handwritten_correction_preserves_layout[False-'-@alice/old-2]",
+        "test_handwritten_correction_preserves_layout[False-'-@alice/old-4]",
+        "test_handwritten_correction_preserves_layout[False-'-old-2]",
+        "test_handwritten_correction_preserves_layout[False-'-old-4]",
+        "test_handwritten_correction_preserves_layout[True-\"-@alice/old-2]",
+        "test_handwritten_correction_preserves_layout[True-\"-@alice/old-4]",
+        "test_handwritten_correction_preserves_layout[True-\"-old-2]",
+        "test_handwritten_correction_preserves_layout[True-\"-old-4]",
+        "test_handwritten_correction_preserves_layout[True-'-@alice/old-2]",
+        "test_handwritten_correction_preserves_layout[True-'-@alice/old-4]",
+        "test_handwritten_correction_preserves_layout[True-'-old-2]",
+        "test_handwritten_correction_preserves_layout[True-'-old-4]",
+        "test_init_written_marker_correction_pastes_and_rechecks[@alice/old]"
+      ]
+    },
+    {
+      "name": "discard_inline_suffix",
+      "path": "internal/repomarker/replacement.go",
+      "before": "candidate := prefix + value + string(line[end:])",
+      "after": "candidate := prefix + value",
+      "failed": [
+        "test_CRLF_correction_pastes_without_changing_line_endings",
+        "test_each_correction_is_bound_to_its_own_entry",
+        "test_handwritten_correction_preserves_layout[False-\"-@alice/old-2]",
+        "test_handwritten_correction_preserves_layout[False-\"-@alice/old-4]",
+        "test_handwritten_correction_preserves_layout[False-\"-old-2]",
+        "test_handwritten_correction_preserves_layout[False-\"-old-4]",
+        "test_handwritten_correction_preserves_layout[False-'-@alice/old-2]",
+        "test_handwritten_correction_preserves_layout[False-'-@alice/old-4]",
+        "test_handwritten_correction_preserves_layout[False-'-old-2]",
+        "test_handwritten_correction_preserves_layout[False-'-old-4]",
+        "test_handwritten_correction_preserves_layout[False--alice/old-2]",
+        "test_handwritten_correction_preserves_layout[False--alice/old-4]",
+        "test_handwritten_correction_preserves_layout[False--old-2]",
+        "test_handwritten_correction_preserves_layout[False--old-4]",
+        "test_handwritten_correction_preserves_layout[True-\"-@alice/old-2]",
+        "test_handwritten_correction_preserves_layout[True-\"-@alice/old-4]",
+        "test_handwritten_correction_preserves_layout[True-\"-old-2]",
+        "test_handwritten_correction_preserves_layout[True-\"-old-4]",
+        "test_handwritten_correction_preserves_layout[True-'-@alice/old-2]",
+        "test_handwritten_correction_preserves_layout[True-'-@alice/old-4]",
+        "test_handwritten_correction_preserves_layout[True-'-old-2]",
+        "test_handwritten_correction_preserves_layout[True-'-old-4]",
+        "test_handwritten_correction_preserves_layout[True--alice/old-2]",
+        "test_handwritten_correction_preserves_layout[True--alice/old-4]",
+        "test_handwritten_correction_preserves_layout[True--old-2]",
+        "test_handwritten_correction_preserves_layout[True--old-4]"
+      ]
+    },
+    {
+      "name": "fabricate_line_instead_of_value_fallback",
+      "path": "cmd/project_check.go",
+      "before": "if r.MarkerLine != \"\" {",
+      "after": "if true {",
+      "failed": [
+        "test_unbound_line_falls_back_to_value_instruction[address: &bound old\\n    role: primary\\n    default: true]",
+        "test_unbound_line_falls_back_to_value_instruction[{address: old, role: primary, default: true}]"
+      ]
+    }
+  ]
+}
