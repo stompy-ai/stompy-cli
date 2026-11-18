@@ -1,5 +1,12 @@
 package api
 
+import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/url"
+)
+
 type ProjectNameResult struct {
 	Success       bool   `json:"success"`
 	Name          string `json:"name"`
@@ -27,6 +34,18 @@ func (c *Client) GetProjectAliases(project string) (*ProjectAliases, error) {
 	var result ProjectAliases
 	if err := c.Get(projectPath(project, "/aliases"), nil, &result); err != nil {
 		return nil, err
+	}
+	return &result, nil
+}
+
+func (c *Client) ReleaseProjectName(project, alias string) (*ProjectNameResult, error) {
+	var result ProjectNameResult
+	data, _, err := c.do(http.MethodDelete, projectPath(project, "/aliases/"+url.PathEscape(alias)), nil, nil, false)
+	if err != nil {
+		return nil, err
+	}
+	if err = json.Unmarshal(data, &result); err != nil {
+		return nil, fmt.Errorf("decoding release response: %w", err)
 	}
 	return &result, nil
 }

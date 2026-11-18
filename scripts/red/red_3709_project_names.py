@@ -14,6 +14,7 @@ PREFIX = "scripts.red.test_project_names::"
 CONTROLS = {PREFIX + name for name in (
     "test_canonical_marker_control", "test_committed_pending_control",
     "test_owner_refusal_control", "test_arity_control",
+    "test_name_endpoint_authentication_control", "test_existing_read_retry_control",
 )}
 REVERTS = [
     ("omit_successful_alias_notice", "internal/api/project_notice.go",
@@ -50,6 +51,9 @@ REVERTS = [
     ("drop_qualified_owner_on_readback", "cmd/project_rename.go",
      'if owner != "" {', 'if false && owner != "" {',
      {"test_qualified_rename_round_trip"}),
+    ("retry_ambiguous_alias_release", "internal/api/project_names.go",
+     'nil, nil, false)', 'nil, nil, true)',
+     {"test_release_must_not_retry"}),
 ]
 
 

@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[2]
 def results():
     run = subprocess.run(
         ["go", "test", "./cmd", "./internal/api", "-json", "-count=1",
-         "-timeout=120s", "-run", "^Test3709"],
+         "-timeout=120s", "-run", "^Test3709|^TestClient_Do_RetriesOn502$"],
         cwd=ROOT, capture_output=True, text=True, timeout=180,
     )
     assert run.returncode in (0, 1), run.stdout + run.stderr
@@ -92,3 +92,15 @@ def test_owner_refusal_control(results):
 
 def test_arity_control(results):
     proved(results, "Test3709RenameArityNoNetwork", "Test3709RenameEmptyInputNoNetwork")
+
+
+def test_name_endpoint_authentication_control(results):
+    proved(results, "Test3709NameEndpointsOwnerAndAuthentication", "Test3709RenameRequestPreservesNewName")
+
+
+def test_release_must_not_retry(results):
+    proved(results, "Test3709ReleaseTransportNeverRetries")
+
+
+def test_existing_read_retry_control(results):
+    proved(results, "TestClient_Do_RetriesOn502")

@@ -151,7 +151,7 @@ func Test3709RenameAliasReadbackFailureIsVisible(t *testing.T) {
 func Test3709RenameLaterNameDoesNotBecomeSuccess(t *testing.T) {
 	_, _, err := runCLI(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "GET" && r.URL.Path == "/projects/current" {
-			fmt.Fprint(w, `{"name":"later","schema_name":"physical_old","now_called":"later","renamed_from":"current"}`)
+			fmt.Fprint(w, `{"name":"later","schema_name":"physical_old","created_at":"2026-11-17T00:00:00Z","now_called":"later","renamed_from":"current"}`)
 			return
 		}
 		renameHandler3709("complete")(w, r)
