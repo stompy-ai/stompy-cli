@@ -41,6 +41,7 @@ type Marker struct {
 	Version     int       `yaml:"version"`
 	Environment string    `yaml:"environment,omitempty"`
 	Projects    []Project `yaml:"projects"`
+	source      []byte
 }
 
 // Parse decodes and validates a marker. Every error says how to fix it.
@@ -57,6 +58,7 @@ func Parse(data []byte) (*Marker, error) {
 	if err := m.validate(); err != nil {
 		return nil, err
 	}
+	m.source = bytes.Clone(data)
 	return &m, nil
 }
 

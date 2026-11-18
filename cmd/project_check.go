@@ -66,7 +66,7 @@ Exit codes: 0 all resolve, 1 at least one does not, 2 missing/invalid file.`,
 						row.Status, row.Reason, failed = "error", noticeErr.Error(), true
 					} else {
 						row.Status, row.NowCalled = "renamed", address
-						row.MarkerLine = fmt.Sprintf("  - address: %q", address)
+						row.MarkerLine = m.ReplacementLine(p.Address, address)
 					}
 				}
 			default:
@@ -118,7 +118,11 @@ func renderCheckLine(r checkRow) string {
 		line += ": " + r.Reason
 	}
 	if r.Status == "renamed" {
-		line += fmt.Sprintf("\n  Warning: now called %q. In .stompy.yaml replace this entry's address line with:\n%s", r.NowCalled, r.MarkerLine)
+		if r.MarkerLine != "" {
+			line += fmt.Sprintf("\n  Warning: now called %q. In .stompy.yaml replace this entry's address line with:\n%s", r.NowCalled, r.MarkerLine)
+		} else {
+			line += fmt.Sprintf("\n  Warning: now called %q. In .stompy.yaml replace the address value %q with %q (the source line cannot be safely reproduced).", r.NowCalled, r.Address, r.NowCalled)
+		}
 	}
 	return line
 }
