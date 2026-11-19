@@ -1,0 +1,94 @@
+{
+  "tests": "scripts/red/test_conflict_detect_3380.py",
+  "prefix": "scripts.red.test_conflict_detect_3380::",
+  "controls": [
+    "test_completed_table_control_retains_success[completed]",
+    "test_completed_table_control_retains_success[legacy]",
+    "test_queued_table_control_does_not_claim_completed_scan",
+    "test_transport_and_decode_failure_controls[not-json-200-decoding response]",
+    "test_transport_and_decode_failure_controls[payload0-503-NLI service not available]"
+  ],
+  "reverts": [
+    {
+      "name": "treat_incomplete_as_success",
+      "path": "cmd/conflict_detect_output.go",
+      "before": "return &exitError{1, \"\"}",
+      "after": "return nil",
+      "failed": [
+        "test_incomplete_table_names_reason_progress_hint_and_candidates[0-llm_escalation_cap]",
+        "test_incomplete_table_names_reason_progress_hint_and_candidates[0-provider_unavailable]",
+        "test_incomplete_table_names_reason_progress_hint_and_candidates[0-time_budget]",
+        "test_incomplete_table_names_reason_progress_hint_and_candidates[2-llm_escalation_cap]",
+        "test_incomplete_table_names_reason_progress_hint_and_candidates[2-provider_unavailable]",
+        "test_incomplete_table_names_reason_progress_hint_and_candidates[2-time_budget]",
+        "test_json_preserves_whole_server_object[config-incomplete]",
+        "test_json_preserves_whole_server_object[flag-incomplete]",
+        "test_json_preserves_whole_server_object[normalized-incomplete]",
+        "test_missing_progress_is_unknown_not_invented_zero[both]",
+        "test_missing_progress_is_unknown_not_invented_zero[pairs_examined]",
+        "test_missing_progress_is_unknown_not_invented_zero[pairs_total]",
+        "test_sparse_provider_outage_never_claims_success",
+        "test_yaml_honors_scan_status_and_preserves_extra_fields[incomplete]",
+        "test_zero_progress_is_not_unknown"
+      ]
+    },
+    {
+      "name": "ignore_structured_output",
+      "path": "cmd/conflict_detect_output.go",
+      "before": "if !isTableOutput() {",
+      "after": "if !isTableOutput() && false {",
+      "failed": [
+        "test_json_preserves_whole_server_object[config-completed]",
+        "test_json_preserves_whole_server_object[config-incomplete]",
+        "test_json_preserves_whole_server_object[config-legacy]",
+        "test_json_preserves_whole_server_object[config-queued]",
+        "test_json_preserves_whole_server_object[flag-completed]",
+        "test_json_preserves_whole_server_object[flag-incomplete]",
+        "test_json_preserves_whole_server_object[flag-legacy]",
+        "test_json_preserves_whole_server_object[flag-queued]",
+        "test_json_preserves_whole_server_object[normalized-completed]",
+        "test_json_preserves_whole_server_object[normalized-incomplete]",
+        "test_json_preserves_whole_server_object[normalized-legacy]",
+        "test_json_preserves_whole_server_object[normalized-queued]",
+        "test_yaml_honors_scan_status_and_preserves_extra_fields[completed]",
+        "test_yaml_honors_scan_status_and_preserves_extra_fields[incomplete]"
+      ]
+    },
+    {
+      "name": "hide_incomplete_details",
+      "path": "cmd/conflict_detect_output.go",
+      "before": "if incomplete {\n\t\t\tmark = \"Incomplete scan:\"",
+      "after": "if incomplete && false {\n\t\t\tmark = \"Incomplete scan:\"",
+      "failed": [
+        "test_incomplete_table_names_reason_progress_hint_and_candidates[0-llm_escalation_cap]",
+        "test_incomplete_table_names_reason_progress_hint_and_candidates[0-provider_unavailable]",
+        "test_incomplete_table_names_reason_progress_hint_and_candidates[0-time_budget]",
+        "test_incomplete_table_names_reason_progress_hint_and_candidates[2-llm_escalation_cap]",
+        "test_incomplete_table_names_reason_progress_hint_and_candidates[2-provider_unavailable]",
+        "test_incomplete_table_names_reason_progress_hint_and_candidates[2-time_budget]",
+        "test_missing_progress_is_unknown_not_invented_zero[both]",
+        "test_missing_progress_is_unknown_not_invented_zero[pairs_examined]",
+        "test_missing_progress_is_unknown_not_invented_zero[pairs_total]",
+        "test_sparse_provider_outage_never_claims_success",
+        "test_zero_progress_is_not_unknown"
+      ]
+    },
+    {
+      "name": "discard_known_progress",
+      "path": "cmd/conflict_detect_output.go",
+      "before": "if count == nil {",
+      "after": "if count == nil || true {",
+      "failed": [
+        "test_incomplete_table_names_reason_progress_hint_and_candidates[0-llm_escalation_cap]",
+        "test_incomplete_table_names_reason_progress_hint_and_candidates[0-provider_unavailable]",
+        "test_incomplete_table_names_reason_progress_hint_and_candidates[0-time_budget]",
+        "test_incomplete_table_names_reason_progress_hint_and_candidates[2-llm_escalation_cap]",
+        "test_incomplete_table_names_reason_progress_hint_and_candidates[2-provider_unavailable]",
+        "test_incomplete_table_names_reason_progress_hint_and_candidates[2-time_budget]",
+        "test_missing_progress_is_unknown_not_invented_zero[pairs_examined]",
+        "test_missing_progress_is_unknown_not_invented_zero[pairs_total]",
+        "test_zero_progress_is_not_unknown"
+      ]
+    }
+  ]
+}
