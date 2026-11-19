@@ -129,6 +129,9 @@ var conflictGetCmd = &cobra.Command{
 var conflictDetectCmd = &cobra.Command{
 	Use:   "detect",
 	Short: "Trigger conflict detection",
+	Long: "Trigger conflict detection. Incomplete scans show their reason and progress and exit 1. " +
+		"Use -o json to preserve the full server result (including on exit 1). " +
+		"Completed and queued scans exit 0.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		project, err := getProject()
 		if err != nil {
@@ -143,21 +146,7 @@ var conflictDetectCmd = &cobra.Command{
 			return err
 		}
 
-		if queued != nil {
-			// STOMPY-1389: scope=all is queued as a background job rather
-			// than blocking (a full scan can run minutes) — poll `conflict
-			// list` for results.
-			fmt.Printf("%s %s (job %s)\n", output.Success("⧗"), queued.Message, queued.JobID)
-			return nil
-		}
-
-		fmt.Printf("%s Found %d conflicts (%d auto-resolved, %d pending) in %.0fms\n",
-			output.Success("✓"),
-			resp.ConflictsFound,
-			resp.AutoResolved,
-			resp.Pending,
-			resp.ProcessingTimeMs)
-		return nil
+		return printConflictDetection(resp, queued)
 	},
 }
 

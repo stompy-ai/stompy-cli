@@ -71,10 +71,21 @@ type ConflictDetectRequest struct {
 // ConflictDetectResponse is the result of a synchronous (scope != "all")
 // detection run.
 type ConflictDetectResponse struct {
-	ConflictsFound   int     `json:"conflicts_found"`
-	AutoResolved     int     `json:"auto_resolved"`
-	Pending          int     `json:"pending"`
-	ProcessingTimeMs float64 `json:"processing_time_ms"`
+	ConflictsFound         int     `json:"conflicts_found"`
+	AutoResolved           int     `json:"auto_resolved"`
+	Pending                int     `json:"pending"`
+	ProcessingTimeMs       float64 `json:"processing_time_ms"`
+	Status                 string  `json:"status"`
+	Reason                 string  `json:"reason"`
+	Hint                   string  `json:"hint"`
+	PairsExamined          *int    `json:"pairs_examined"`
+	PairsTotal             *int    `json:"pairs_total"`
+	UnjudgedPairs          int     `json:"unjudged_pairs"`
+	UnjudgedIDs            [][]int `json:"unjudged_ids"`
+	LikelyUnconfirmedPairs int     `json:"likely_unconfirmed_pairs"`
+	LikelyUnconfirmedIDs   [][]int `json:"likely_unconfirmed_ids"`
+	// Raw retains fields the table does not model, including future metadata.
+	Raw json.RawMessage `json:"-"`
 }
 
 // ConflictDetectQueuedResponse is returned (HTTP 202) for scope="all", which
@@ -82,10 +93,11 @@ type ConflictDetectResponse struct {
 // (STOMPY-1389 — a full scan can run minutes). ConflictsFound is not known
 // yet; poll `conflict list` for results.
 type ConflictDetectQueuedResponse struct {
-	Status  string `json:"status"`
-	JobID   string `json:"job_id"`
-	Scope   string `json:"scope"`
-	Message string `json:"message"`
+	Status  string          `json:"status"`
+	JobID   string          `json:"job_id"`
+	Scope   string          `json:"scope"`
+	Message string          `json:"message"`
+	Raw     json.RawMessage `json:"-"`
 }
 
 // ConflictResolveRequest resolves a conflict.
@@ -142,6 +154,7 @@ func (c *Client) DetectConflicts(project string, req ConflictDetectRequest) (res
 		if err := json.Unmarshal(data, queued); err != nil {
 			return nil, nil, fmt.Errorf("decoding queued response: %w", err)
 		}
+		queued.Raw = data
 		return nil, queued, nil
 	}
 
@@ -149,6 +162,7 @@ func (c *Client) DetectConflicts(project string, req ConflictDetectRequest) (res
 	if err := json.Unmarshal(data, resp); err != nil {
 		return nil, nil, fmt.Errorf("decoding response: %w", err)
 	}
+	resp.Raw = data
 	return resp, nil, nil
 }
 

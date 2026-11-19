@@ -31,3 +31,6 @@ jobs:
 
       - name: Marker address quote hint (STOMPY-3748)
         run: python -m pytest scripts/red/test_address_hint_3748.py -q -p no:cacheprovider
+
+      - name: Conflict detect scan truth and formats (STOMPY-3380, STOMPY-3101)
+        run: python -m pytest scripts/red/test_conflict_detect_3380.py -q -p no:cacheprovider
