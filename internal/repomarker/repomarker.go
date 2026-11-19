@@ -53,7 +53,7 @@ func Parse(data []byte) (*Marker, error) {
 		if errors.Is(err, io.EOF) {
 			return nil, fmt.Errorf("%s is empty: expected `version: 1` and a `projects:` list (run `stompy init --project <address>`)", FileName)
 		}
-		return nil, fmt.Errorf("%s is not valid: %v (allowed keys: version, environment, projects[address, role, default, purpose])", FileName, err)
+		return nil, markerDecodeError(data, err)
 	}
 	if err := m.validate(); err != nil {
 		return nil, err

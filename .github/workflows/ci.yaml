@@ -28,3 +28,6 @@ jobs:
 
       - name: Marker corrections paste and recheck (STOMPY-3744)
         run: python -m pytest scripts/red/test_marker_line_3744.py -q -p no:cacheprovider
+
+      - name: Marker address quote hint (STOMPY-3748)
+        run: python -m pytest scripts/red/test_address_hint_3748.py -q -p no:cacheprovider

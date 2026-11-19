@@ -1,0 +1,71 @@
+{
+  "tests": "scripts/red/test_address_hint_3748.py",
+  "prefix": "scripts.red.test_address_hint_3748::",
+  "controls": [
+    "test_other_errors_control_gets_no_hint[comment]",
+    "test_other_errors_control_gets_no_hint[empty]",
+    "test_other_errors_control_gets_no_hint[quoted-text]",
+    "test_other_errors_control_gets_no_hint[unrelated]",
+    "test_other_errors_control_gets_no_hint[validation]",
+    "test_quoted_address_control_resolves_without_hint[double]",
+    "test_quoted_address_control_resolves_without_hint[single]"
+  ],
+  "reverts": [
+    {
+      "name": "suppress_address_quote_hint",
+      "path": "internal/repomarker/parse_error.go",
+      "before": "if hasUnquotedAddressAtError(data, err) {",
+      "after": "if hasUnquotedAddressAtError(data, err) && false {",
+      "failed": [
+        "test_hint_quoted_example_pastes_and_rechecks",
+        "test_shared_marker_loaders_keep_their_exit_and_hint[context]",
+        "test_shared_marker_loaders_keep_their_exit_and_hint[init]",
+        "test_unquoted_address_hint_keeps_cause_and_exit_two[crlf-after-role]",
+        "test_unquoted_address_hint_keeps_cause_and_exit_two[crlf-list]",
+        "test_unquoted_address_hint_keeps_cause_and_exit_two[crlf-quoted-key]",
+        "test_unquoted_address_hint_keeps_cause_and_exit_two[crlf-tab-value]",
+        "test_unquoted_address_hint_keeps_cause_and_exit_two[lf-after-role]",
+        "test_unquoted_address_hint_keeps_cause_and_exit_two[lf-list]",
+        "test_unquoted_address_hint_keeps_cause_and_exit_two[lf-quoted-key]",
+        "test_unquoted_address_hint_keeps_cause_and_exit_two[lf-tab-value]"
+      ]
+    },
+    {
+      "name": "hint_for_a_later_address",
+      "path": "internal/repomarker/parse_error.go",
+      "before": "return unquotedAddress.MatchString(lines[line-1])",
+      "after": "return unquotedAddress.Match(data)",
+      "failed": [
+        "test_other_errors_control_gets_no_hint[earlier-line]"
+      ]
+    },
+    {
+      "name": "discard_original_yaml_cause",
+      "path": "internal/repomarker/parse_error.go",
+      "before": "FileName, err)",
+      "after": "FileName, \"parse error\")",
+      "failed": [
+        "test_shared_marker_loaders_keep_their_exit_and_hint[context]",
+        "test_shared_marker_loaders_keep_their_exit_and_hint[init]",
+        "test_unquoted_address_hint_keeps_cause_and_exit_two[crlf-after-role]",
+        "test_unquoted_address_hint_keeps_cause_and_exit_two[crlf-list]",
+        "test_unquoted_address_hint_keeps_cause_and_exit_two[crlf-quoted-key]",
+        "test_unquoted_address_hint_keeps_cause_and_exit_two[crlf-tab-value]",
+        "test_unquoted_address_hint_keeps_cause_and_exit_two[lf-after-role]",
+        "test_unquoted_address_hint_keeps_cause_and_exit_two[lf-list]",
+        "test_unquoted_address_hint_keeps_cause_and_exit_two[lf-quoted-key]",
+        "test_unquoted_address_hint_keeps_cause_and_exit_two[lf-tab-value]",
+        "test_unrelated_parse_cause_stays_intact"
+      ]
+    },
+    {
+      "name": "hint_for_non_address_field",
+      "path": "internal/repomarker/parse_error.go",
+      "before": "(?:address|\"address\"|'address')",
+      "after": "(?:address|purpose|\"address\"|'address')",
+      "failed": [
+        "test_other_errors_control_gets_no_hint[non-address]"
+      ]
+    }
+  ]
+}
