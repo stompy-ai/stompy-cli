@@ -14,7 +14,7 @@ type ProjectCreate struct {
 
 type ProjectStats struct {
 	ContextCount   int        `json:"context_count"`
-	SessionCount   int        `json:"session_count"`
+	SessionCount   *int       `json:"session_count"` // nil: the server could not read it (STOMPY-3816)
 	FileCount      int        `json:"file_count"`
 	StorageBytesDB *int       `json:"storage_bytes_db"` // nil: not shown (a project shared with you, STOMPY-3500)
 	StorageBytesS3 *int       `json:"storage_bytes_s3"`

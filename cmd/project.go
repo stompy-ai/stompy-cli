@@ -117,7 +117,7 @@ var projectListCmd = &cobra.Command{
 			if withStats && p.Stats != nil {
 				row = append(row,
 					fmt.Sprintf("%d", p.Stats.ContextCount),
-					fmt.Sprintf("%d", p.Stats.SessionCount),
+					formatCount(p.Stats.SessionCount),
 					fmt.Sprintf("%d", p.Stats.FileCount),
 				)
 			}
@@ -159,7 +159,7 @@ var projectInfoCmd = &cobra.Command{
 		if resp.Stats != nil {
 			fields = append(fields,
 				output.KeyValue{Key: "Contexts", Value: fmt.Sprintf("%d", resp.Stats.ContextCount)},
-				output.KeyValue{Key: "Sessions", Value: fmt.Sprintf("%d", resp.Stats.SessionCount)},
+				output.KeyValue{Key: "Sessions", Value: formatCount(resp.Stats.SessionCount)},
 				output.KeyValue{Key: "Files", Value: fmt.Sprintf("%d", resp.Stats.FileCount)},
 			)
 			if withStats {
@@ -315,6 +315,15 @@ func init() {
 
 // formatStorage reads a nil size as "not shown": the server sizes only your
 // own projects, and a null is not a zero (STOMPY-3500).
+// formatCount prints a count the server may answer null for ("could not read",
+// STOMPY-3816): unknown, never a confident 0.
+func formatCount(n *int) string {
+	if n == nil {
+		return "unknown"
+	}
+	return fmt.Sprintf("%d", *n)
+}
+
 func formatStorage(b *int) string {
 	if b == nil {
 		return "not shown"
