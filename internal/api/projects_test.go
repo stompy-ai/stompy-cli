@@ -62,6 +62,7 @@ func TestListProjects_WithoutStats(t *testing.T) {
 
 func TestGetProject(t *testing.T) {
 	desc := "test project"
+	sessions := 10
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/projects/myproj" {
 			t.Errorf("path = %s, want /projects/myproj", r.URL.Path)
@@ -74,7 +75,7 @@ func TestGetProject(t *testing.T) {
 			Description: &desc,
 			Stats: &ProjectStats{
 				ContextCount: 5,
-				SessionCount: 10,
+				SessionCount: &sessions,
 			},
 		})
 	}))
