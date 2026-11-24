@@ -25,10 +25,8 @@ var bugListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List bug reports",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		project, err := getProject()
-		if err != nil {
-			return err
-		}
+		// Bug reports are not project-scoped; the API takes no project (STOMPY-3848).
+		project := ""
 
 		status, _ := cmd.Flags().GetString("status")
 		limit, _ := cmd.Flags().GetInt("limit")
@@ -75,10 +73,8 @@ var bugGetCmd = &cobra.Command{
 	Short: "Show bug report details",
 	Args:  exactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		project, err := getProject()
-		if err != nil {
-			return err
-		}
+		// Bug reports are not project-scoped; the API takes no project (STOMPY-3848).
+		project := ""
 
 		resp, err := apiClient.GetBugReport(project, args[0])
 		if err != nil {

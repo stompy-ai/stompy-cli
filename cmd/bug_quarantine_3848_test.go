@@ -52,3 +52,28 @@ func TestControlBugListWithoutQuarantineSaysNothingExtra3848(t *testing.T) {
 		t.Fatalf("no quarantine, yet stderr says %q", stderr)
 	}
 }
+
+// STOMPY-3848 (second wart): bug reports are not project-scoped and the client
+// never sends the project, yet list/get refused to run without one, so a user
+// with no default project could not read their own reports.
+func TestBugListNeedsNoProject3848(t *testing.T) {
+	clean := `{"reports":[{"id":"BUG-2","title":"valid","status":"triage","severity":"low"}],"total":1,"filters":{}}`
+	stdout, _, call, err := runLifecycle(t, jsonReply(200, clean), "bug", "list")
+	if err != nil {
+		t.Fatalf("bug list without a project: %v", err)
+	}
+	if call.path != "/bug-reports" || !strings.Contains(stdout, "BUG-2") {
+		t.Fatalf("path %q stdout %q", call.path, stdout)
+	}
+}
+
+func TestBugGetNeedsNoProject3848(t *testing.T) {
+	one := `{"id":"BUG-2","title":"valid","status":"triage","severity":"low"}`
+	stdout, _, call, err := runLifecycle(t, jsonReply(200, one), "bug", "get", "BUG-2")
+	if err != nil {
+		t.Fatalf("bug get without a project: %v", err)
+	}
+	if call.path != "/bug-reports/BUG-2" || !strings.Contains(stdout, "BUG-2") {
+		t.Fatalf("path %q stdout %q", call.path, stdout)
+	}
+}
