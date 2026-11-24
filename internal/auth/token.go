@@ -34,7 +34,7 @@ func RefreshToken(apiURL, refreshToken string) (*TokenResponse, error) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("token refresh failed (status %d) — please run 'stompy login' again", resp.StatusCode)
+		return nil, fmt.Errorf("token refresh failed (status %d)", resp.StatusCode)
 	}
 
 	var tokenResp TokenResponse
