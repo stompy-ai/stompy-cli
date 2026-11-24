@@ -7,8 +7,6 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-
-	"github.com/spf13/pflag"
 )
 
 // STOMPY-2722: `stompy context lifecycle <topic> --state ...` is the CLI door
@@ -40,14 +38,7 @@ func runLifecycle(t *testing.T, h http.HandlerFunc, args ...string) (stdout, std
 	}))
 	defer srv.Close()
 
-	// cobra keeps flag values (and Changed) between Execute calls in one process.
-	resetFlags := func(fs *pflag.FlagSet) {
-		fs.VisitAll(func(f *pflag.Flag) { _ = f.Value.Set(f.DefValue); f.Changed = false })
-	}
-	resetFlags(rootCmd.PersistentFlags())
-	if c, _, ferr := rootCmd.Find([]string{"context", "lifecycle"}); ferr == nil && c != nil {
-		resetFlags(c.Flags())
-	}
+	resetLifecycleFlags(t, rootCmd)
 
 	// PersistentPreRunE closes this channel once per Execute; a second Execute
 	// in one process would close it twice. Give each run its own and wait for
@@ -60,8 +51,7 @@ func runLifecycle(t *testing.T, h http.HandlerFunc, args ...string) (stdout, std
 			err = rootCmd.Execute()
 		})
 	})
-	for range updateAvailable {
-	}
+	drainLifecycleUpdate()
 	return
 }
 
