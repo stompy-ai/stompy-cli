@@ -28,7 +28,11 @@ func searchReply2325(seen *string, violations string) http.HandlerFunc {
 		*seen = r.URL.RawQuery
 		w.Header().Set("Content-Type", "application/json")
 		body := `{"results":[],"total_found":0,"search_mode":"hybrid"`
-		if violations != "" {
+		switch violations {
+		case "<absent>":
+		case "":
+			body += `,"violations":null`
+		default:
 			body += `,"violations":` + jsonQuote(violations)
 		}
 		_, _ = w.Write([]byte(body + "}"))
@@ -77,5 +81,18 @@ func TestControlSearchWithoutTheFlagSendsNothing2325(t *testing.T) {
 	}
 	if strings.Contains(seen, "check_violations") || strings.Contains(stdout, "Rule check") {
 		t.Fatalf("flag off, yet query %q / output %q mention it", seen, stdout)
+	}
+}
+
+func TestSearchCheckViolationsSaysWhenTheServerCannotCheck2325(t *testing.T) {
+	resetSearchFlags2325(t)
+	var seen string
+	stdout, _, _, err := runLifecycle(t, searchReply2325(&seen, "<absent>"),
+		"-p", "foo", "search", "anything", "--check-violations")
+	if err != nil {
+		t.Fatalf("search: %v", err)
+	}
+	if !strings.Contains(stdout, "not available from this server") || strings.Contains(stdout, "no rule broken") {
+		t.Fatalf("an absent verdict must not read as a clean one: %q", stdout)
 	}
 }

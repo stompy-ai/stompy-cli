@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -169,10 +170,15 @@ func init() {
 
 // printRuleCheck shows the server's violation verdict (STOMPY-2325); a null
 // verdict is stated, never left as silence.
-func printRuleCheck(violations *string) {
-	if violations == nil || *violations == "" {
+func printRuleCheck(raw json.RawMessage) {
+	if len(raw) == 0 { // the key is absent: this server cannot check rules
+		fmt.Println("\nRule check: not available from this server.")
+		return
+	}
+	var verdict *string
+	if err := json.Unmarshal(raw, &verdict); err != nil || verdict == nil || *verdict == "" {
 		fmt.Println("\nRule check: no rule broken.")
 		return
 	}
-	fmt.Printf("\nRule check:\n%s\n", *violations)
+	fmt.Printf("\nRule check:\n%s\n", *verdict)
 }
