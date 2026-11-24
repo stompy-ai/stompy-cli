@@ -173,6 +173,7 @@ func resolveAuthToken() (string, error) {
 
 	// 3. OAuth token from config (with auto-refresh), scoped to the target environment
 	env := currentEnvironment()
+	var refreshErr error
 	accessToken := config.GetAccessToken(env)
 	if accessToken != "" {
 		expiry := config.GetTokenExpiry(env)
@@ -189,7 +190,7 @@ func resolveAuthToken() (string, error) {
 				_ = config.SaveTokens(env, tokenResp.AccessToken, tokenResp.RefreshToken, newExpiry, config.GetEmail(env), "")
 				return tokenResp.AccessToken, nil
 			}
-			// Refresh failed — fall through
+			refreshErr = err
 		}
 	}
 
@@ -199,6 +200,9 @@ func resolveAuthToken() (string, error) {
 	}
 
 	// 5. No auth available
+	if refreshErr != nil {
+		return "", fmt.Errorf("your %s session expired and could not be renewed (%w); run %s", env, refreshErr, sessionLoginCommand(env))
+	}
 	return "", fmt.Errorf("not authenticated. Run 'stompy login' or set STOMPY_API_KEY")
 }
 

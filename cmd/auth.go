@@ -83,7 +83,10 @@ var whoamiCmd = &cobra.Command{
 		email := config.GetEmail(env)
 		status := "Valid"
 		if auth.IsExpired(expiry) {
-			status = "Expired (will auto-refresh on next command)"
+			status = "Expired; run " + sessionLoginCommand(env)
+			if config.GetRefreshToken(env) != "" {
+				status = "Expired; renews on next command"
+			}
 		}
 
 		fields := []output.KeyValue{
@@ -102,6 +105,13 @@ var whoamiCmd = &cobra.Command{
 		fmt.Print(f.FormatSingle(fields))
 		return nil
 	},
+}
+
+func sessionLoginCommand(env config.Environment) string {
+	if env == config.EnvStaging {
+		return "stompy login --use-staging"
+	}
+	return "stompy login"
 }
 
 // usageFields fetches GET /billing/usage (STOMPY-2187) for `whoami`
