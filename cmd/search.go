@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/stompy-ai/stompy-cli/internal/output"
@@ -98,7 +99,7 @@ func runSearch(cmd *cobra.Command, query string) error {
 	}
 	// STOMPY-2325: the rule check is shown even when no context matched.
 	if checked, _ := cmd.Flags().GetBool("check-violations"); checked {
-		defer printRuleCheck(resp.Violations)
+		defer printRuleCheck(resp.Violations, resp.ViolationsJudgedBy)
 	}
 	if len(resp.Results) == 0 {
 		fmt.Printf("no matches for %q (search_mode: %s)\n", query, mode)
@@ -170,15 +171,20 @@ func init() {
 
 // printRuleCheck shows the server's violation verdict (STOMPY-2325); a null
 // verdict is stated, never left as silence.
-func printRuleCheck(raw json.RawMessage) {
+func printRuleCheck(raw json.RawMessage, judgedBy string) {
 	if len(raw) == 0 { // the key is absent: this server cannot check rules
 		fmt.Println("\nRule check: not available from this server.")
 		return
 	}
+	// A keyword-only verdict says so: it must never read as the model's all-clear.
+	note := ""
+	if judgedBy != "" && judgedBy != "model" {
+		note = " (keyword check only: " + strings.TrimSuffix(strings.TrimPrefix(judgedBy, "keywords ("), ")") + ")"
+	}
 	var verdict *string
 	if err := json.Unmarshal(raw, &verdict); err != nil || verdict == nil || *verdict == "" {
-		fmt.Println("\nRule check: no rule broken.")
+		fmt.Printf("\nRule check: no rule broken%s.\n", note)
 		return
 	}
-	fmt.Printf("\nRule check:\n%s\n", *verdict)
+	fmt.Printf("\nRule check%s:\n%s\n", note, *verdict)
 }

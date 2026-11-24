@@ -8,18 +8,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
-
-	"github.com/spf13/pflag"
 )
-
-// resetSearchFlags2325: cobra keeps flag values across Execute calls in one
-// process, and runLifecycle resets only the root and lifecycle flags.
-func resetSearchFlags2325(t *testing.T) {
-	t.Helper()
-	if c, _, err := rootCmd.Find([]string{"search"}); err == nil && c != nil {
-		c.Flags().VisitAll(func(f *pflag.Flag) { _ = f.Value.Set(f.DefValue); f.Changed = false })
-	}
-}
 
 const verdict2325 = "Warning: Potential context violations detected:\n   - file_size_ratchet: Rewriting to accommodate GROWTH is refused."
 
@@ -31,9 +20,11 @@ func searchReply2325(seen *string, violations string) http.HandlerFunc {
 		switch violations {
 		case "<absent>":
 		case "":
-			body += `,"violations":null`
+			body += `,"violations":null,"violations_judged_by":"model"`
+		case "<keywords>":
+			body += `,"violations":null,"violations_judged_by":"keywords (the model's answer could not be read)"`
 		default:
-			body += `,"violations":` + jsonQuote(violations)
+			body += `,"violations":` + jsonQuote(violations) + `,"violations_judged_by":"model"`
 		}
 		_, _ = w.Write([]byte(body + "}"))
 	}
@@ -44,7 +35,6 @@ func jsonQuote(s string) string {
 }
 
 func TestSearchCheckViolationsAsksAndShowsTheRule2325(t *testing.T) {
-	resetSearchFlags2325(t)
 	var seen string
 	stdout, _, _, err := runLifecycle(t, searchReply2325(&seen, verdict2325),
 		"-p", "foo", "search", "raise the baseline", "--check-violations")
@@ -60,7 +50,6 @@ func TestSearchCheckViolationsAsksAndShowsTheRule2325(t *testing.T) {
 }
 
 func TestSearchCheckViolationsSaysWhenNoRuleIsBroken2325(t *testing.T) {
-	resetSearchFlags2325(t)
 	var seen string
 	stdout, _, _, err := runLifecycle(t, searchReply2325(&seen, ""),
 		"-p", "foo", "search", "write a test first", "--check-violations")
@@ -73,7 +62,6 @@ func TestSearchCheckViolationsSaysWhenNoRuleIsBroken2325(t *testing.T) {
 }
 
 func TestControlSearchWithoutTheFlagSendsNothing2325(t *testing.T) {
-	resetSearchFlags2325(t)
 	var seen string
 	stdout, _, _, err := runLifecycle(t, searchReply2325(&seen, ""), "-p", "foo", "search", "anything")
 	if err != nil {
@@ -85,7 +73,6 @@ func TestControlSearchWithoutTheFlagSendsNothing2325(t *testing.T) {
 }
 
 func TestSearchCheckViolationsSaysWhenTheServerCannotCheck2325(t *testing.T) {
-	resetSearchFlags2325(t)
 	var seen string
 	stdout, _, _, err := runLifecycle(t, searchReply2325(&seen, "<absent>"),
 		"-p", "foo", "search", "anything", "--check-violations")
@@ -94,5 +81,17 @@ func TestSearchCheckViolationsSaysWhenTheServerCannotCheck2325(t *testing.T) {
 	}
 	if !strings.Contains(stdout, "not available from this server") || strings.Contains(stdout, "no rule broken") {
 		t.Fatalf("an absent verdict must not read as a clean one: %q", stdout)
+	}
+}
+
+func TestSearchCheckViolationsSaysWhenOnlyKeywordsJudged2325(t *testing.T) {
+	var seen string
+	stdout, _, _, err := runLifecycle(t, searchReply2325(&seen, "<keywords>"),
+		"-p", "foo", "search", "merge without the RED harness", "--check-violations")
+	if err != nil {
+		t.Fatalf("search: %v", err)
+	}
+	if !strings.Contains(stdout, "keyword check only") || !strings.Contains(stdout, "could not be read") {
+		t.Fatalf("a keyword-only verdict must say so, not read as the model's all-clear: %q", stdout)
 	}
 }
