@@ -26,8 +26,16 @@ type BugReportResponse struct {
 // BugReportListResponse wraps a list of bug reports. The server's envelope
 // key is "reports", not "bug_reports" (STOMPY-1462).
 type BugReportListResponse struct {
-	Reports []BugReportResponse `json:"reports"`
-	Total   int                 `json:"total"`
+	Reports     []BugReportResponse   `json:"reports"`
+	Total       int                   `json:"total"`
+	Quarantined []BugReportQuarantine `json:"quarantined,omitempty"`
+}
+
+// BugReportQuarantine names one report on this page that the server could not
+// show, so the page is never silently short (STOMPY-3848).
+type BugReportQuarantine struct {
+	ID     string `json:"id"`
+	Reason string `json:"reason"`
 }
 
 // ListBugReports fetches bug reports with an optional status filter.

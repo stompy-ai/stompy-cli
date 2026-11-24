@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/stompy-ai/stompy-cli/internal/output"
@@ -60,6 +61,10 @@ var bugListCmd = &cobra.Command{
 		fmt.Print(f.FormatTable(headers, rows))
 		if isTableOutput() {
 			fmt.Printf("\nTotal: %d bug reports\n", resp.Total)
+		}
+		// stderr in every format: -o json stays the row array (STOMPY-3848).
+		for _, q := range resp.Quarantined {
+			fmt.Fprintf(os.Stderr, "notice: %s could not be shown (%s)\n", q.ID, q.Reason)
 		}
 		return nil
 	},
