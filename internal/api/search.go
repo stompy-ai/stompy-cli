@@ -76,6 +76,8 @@ type SearchResponse struct {
 	Results    []SearchResult `json:"results"`
 	TotalFound int            `json:"total_found"`
 	SearchMode string         `json:"search_mode,omitempty"`
+	// Violations is the rule check's verdict when check_violations was asked (STOMPY-2325).
+	Violations *string `json:"violations,omitempty"`
 
 	// Raw is the response exactly as the API sent it, for -o json/yaml (the
 	// typed fields above model only what the table renders).

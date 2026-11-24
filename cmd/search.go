@@ -28,6 +28,7 @@ var searchRoute = []struct {
 	{"expand-entities", "expand_entities", "bool", "Expand results via shared entities"},
 	{"expand-links", "expand_links", "bool", "Include 1-hop linked contexts"},
 	{"explain", "explain", "bool", "Include a per-result signal breakdown in -o json"},
+	{"check-violations", "check_violations", "bool", "Name the project rules this query would break"},
 }
 
 // addSearchFlags registers the search route's filters on cmd. `search` and
@@ -93,6 +94,10 @@ func runSearch(cmd *cobra.Command, query string) error {
 	mode := resp.SearchMode
 	if mode == "" {
 		mode = "unknown"
+	}
+	// STOMPY-2325: the rule check is shown even when no context matched.
+	if checked, _ := cmd.Flags().GetBool("check-violations"); checked {
+		defer printRuleCheck(resp.Violations)
 	}
 	if len(resp.Results) == 0 {
 		fmt.Printf("no matches for %q (search_mode: %s)\n", query, mode)
@@ -160,4 +165,14 @@ Same command as 'stompy context search'.`,
 func init() {
 	addSearchFlags(searchCmd)
 	rootCmd.AddCommand(searchCmd)
+}
+
+// printRuleCheck shows the server's violation verdict (STOMPY-2325); a null
+// verdict is stated, never left as silence.
+func printRuleCheck(violations *string) {
+	if violations == nil || *violations == "" {
+		fmt.Println("\nRule check: no rule broken.")
+		return
+	}
+	fmt.Printf("\nRule check:\n%s\n", *violations)
 }
