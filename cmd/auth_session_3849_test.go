@@ -24,6 +24,12 @@ func TestSession3849_RefreshFailureNamesEnvironment(t *testing.T) {
 			if env == config.EnvStaging {
 				hint += " --use-staging"
 			}
+			if strings.Count(err.Error(), hint) != 1 {
+				t.Errorf("want exactly one %q command: %v", hint, err)
+			}
+			if env == config.EnvStaging && strings.Contains(strings.ReplaceAll(err.Error(), hint, ""), "stompy login") {
+				t.Errorf("staging failure contains bare production login advice: %v", err)
+			}
 			for _, text := range []string{"your " + string(env) + " session expired and could not be renewed (", "token refresh failed (status 400)", "); run " + hint} {
 				if !strings.Contains(err.Error(), text) {
 					t.Errorf("refresh failure lost %q: %v", text, err)
