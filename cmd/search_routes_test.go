@@ -8,9 +8,6 @@ import (
 	"net/url"
 	"strings"
 	"testing"
-	"time"
-
-	"github.com/spf13/pflag"
 )
 
 // STOMPY-2728: `stompy context search` called the list route's lexical
@@ -41,24 +38,7 @@ func runCLI(t *testing.T, h http.HandlerFunc, args ...string) (stdout string, re
 	}))
 	defer srv.Close()
 
-	// cobra keeps flag values (and Changed) between Execute calls in one process.
-	reset := func(fs *pflag.FlagSet) {
-		fs.VisitAll(func(f *pflag.Flag) {
-			if sv, ok := f.Value.(pflag.SliceValue); ok {
-				_ = sv.Replace(nil)
-			} else {
-				_ = f.Value.Set(f.DefValue)
-			}
-			f.Changed = false
-		})
-	}
-	reset(rootCmd.PersistentFlags())
-	for _, cmdPath := range [][]string{{"search"}, {"context", "search"}, {"init"}, {"project", "check"},
-		{"project", "create"}, {"project", "info"}, {"project", "list"}, {"project", "set-metadata"}, {"project", "link"}, {"project", "unlink"}, {"project", "links"}} {
-		if c, _, ferr := rootCmd.Find(cmdPath); ferr == nil && c != nil {
-			reset(c.Flags())
-		}
-	}
+	resetLifecycleFlags(t, rootCmd)
 
 	updateAvailable = make(chan string, 1)
 	full := append([]string{"--api-url", srv.URL, "--api-key", "tok"}, args...)
@@ -68,17 +48,7 @@ func runCLI(t *testing.T, h http.HandlerFunc, args ...string) (stdout string, re
 			err = rootCmd.Execute()
 		})
 	})
-	// PersistentPreRunE (which closes the channel) never runs when flag
-	// parsing fails, so the drain must be bounded.
-	timeout := time.After(2 * time.Second)
-	for done := false; !done; {
-		select {
-		case _, ok := <-updateAvailable:
-			done = !ok
-		case <-timeout:
-			done = true
-		}
-	}
+	drainLifecycleUpdate()
 	return
 }
 
