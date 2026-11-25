@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/stompy-ai/stompy-cli/internal/output"
@@ -24,10 +25,8 @@ var bugListCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List bug reports",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		project, err := getProject()
-		if err != nil {
-			return err
-		}
+		// Bug reports are not project-scoped; the API takes no project (STOMPY-3848).
+		project := ""
 
 		status, _ := cmd.Flags().GetString("status")
 		limit, _ := cmd.Flags().GetInt("limit")
@@ -61,6 +60,10 @@ var bugListCmd = &cobra.Command{
 		if isTableOutput() {
 			fmt.Printf("\nTotal: %d bug reports\n", resp.Total)
 		}
+		// stderr in every format: -o json stays the row array (STOMPY-3848).
+		for _, q := range resp.Quarantined {
+			fmt.Fprintf(os.Stderr, "notice: %s could not be shown (%s)\n", q.ID, q.Reason)
+		}
 		return nil
 	},
 }
@@ -70,10 +73,8 @@ var bugGetCmd = &cobra.Command{
 	Short: "Show bug report details",
 	Args:  exactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		project, err := getProject()
-		if err != nil {
-			return err
-		}
+		// Bug reports are not project-scoped; the API takes no project (STOMPY-3848).
+		project := ""
 
 		resp, err := apiClient.GetBugReport(project, args[0])
 		if err != nil {
