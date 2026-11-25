@@ -10,24 +10,34 @@ import (
 // string, timestamps are strings, not int/time.Time) mirror
 // src/api/routes/bug_reports.py::BugReportResponse (STOMPY-1462).
 type BugReportResponse struct {
-	ID          string `json:"id"`
-	Title       string `json:"title"`
-	Description string `json:"description"`
-	Status      string `json:"status"`
-	Severity    string `json:"severity,omitempty"`
-	Steps       string `json:"steps_to_reproduce,omitempty"`
-	Expected    string `json:"expected_behavior,omitempty"`
-	Actual      string `json:"actual_behavior,omitempty"`
-	ProjectName string `json:"project_name,omitempty"`
-	CreatedAt   string `json:"created_at,omitempty"`
-	UpdatedAt   string `json:"updated_at,omitempty"`
+	ID          string         `json:"id"`
+	Title       string         `json:"title"`
+	Description string         `json:"description"`
+	Status      string         `json:"status"`
+	Severity    string         `json:"severity,omitempty"`
+	Steps       string         `json:"steps_to_reproduce,omitempty"`
+	Expected    string         `json:"expected_behavior,omitempty"`
+	Actual      string         `json:"actual_behavior,omitempty"`
+	ProjectName string         `json:"project_name,omitempty"`
+	SessionID   string         `json:"session_id,omitempty"`
+	Environment map[string]any `json:"environment,omitempty"`
+	CreatedAt   string         `json:"created_at,omitempty"`
+	UpdatedAt   string         `json:"updated_at,omitempty"`
 }
 
 // BugReportListResponse wraps a list of bug reports. The server's envelope
 // key is "reports", not "bug_reports" (STOMPY-1462).
 type BugReportListResponse struct {
-	Reports []BugReportResponse `json:"reports"`
-	Total   int                 `json:"total"`
+	Reports     []BugReportResponse   `json:"reports"`
+	Total       int                   `json:"total"`
+	Quarantined []BugReportQuarantine `json:"quarantined,omitempty"`
+}
+
+// BugReportQuarantine names one report on this page that the server could not
+// show, so the page is never silently short (STOMPY-3848).
+type BugReportQuarantine struct {
+	ID     string `json:"id"`
+	Reason string `json:"reason"`
 }
 
 // ListBugReports fetches bug reports with an optional status filter.
