@@ -102,7 +102,7 @@ var bugGetCmd = &cobra.Command{
 			fields = append(fields, output.KeyValue{Key: "Actual Behavior", Value: resp.Actual})
 		}
 
-		fmt.Print(f.FormatSingle(fields))
+		fmt.Print(formatBugDetail(f, fields, resp))
 		return nil
 	},
 }
