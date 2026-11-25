@@ -1,9 +1,11 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/stompy-ai/stompy-cli/internal/output"
@@ -28,6 +30,7 @@ var searchRoute = []struct {
 	{"expand-entities", "expand_entities", "bool", "Expand results via shared entities"},
 	{"expand-links", "expand_links", "bool", "Include 1-hop linked contexts"},
 	{"explain", "explain", "bool", "Include a per-result signal breakdown in -o json"},
+	{"check-violations", "check_violations", "bool", "Name the project rules this query would break"},
 }
 
 // addSearchFlags registers the search route's filters on cmd. `search` and
@@ -93,6 +96,10 @@ func runSearch(cmd *cobra.Command, query string) error {
 	mode := resp.SearchMode
 	if mode == "" {
 		mode = "unknown"
+	}
+	// STOMPY-2325: the rule check is shown even when no context matched.
+	if checked, _ := cmd.Flags().GetBool("check-violations"); checked {
+		defer printRuleCheck(resp.Violations, resp.ViolationsJudgedBy)
 	}
 	if len(resp.Results) == 0 {
 		fmt.Printf("no matches for %q (search_mode: %s)\n", query, mode)
@@ -160,4 +167,24 @@ Same command as 'stompy context search'.`,
 func init() {
 	addSearchFlags(searchCmd)
 	rootCmd.AddCommand(searchCmd)
+}
+
+// printRuleCheck shows the server's violation verdict (STOMPY-2325); a null
+// verdict is stated, never left as silence.
+func printRuleCheck(raw json.RawMessage, judgedBy string) {
+	if len(raw) == 0 { // the key is absent: this server cannot check rules
+		fmt.Println("\nRule check: not available from this server.")
+		return
+	}
+	// A keyword-only verdict says so: it must never read as the model's all-clear.
+	note := ""
+	if judgedBy != "" && judgedBy != "model" {
+		note = " (keyword check only: " + strings.TrimSuffix(strings.TrimPrefix(judgedBy, "keywords ("), ")") + ")"
+	}
+	var verdict *string
+	if err := json.Unmarshal(raw, &verdict); err != nil || verdict == nil || *verdict == "" {
+		fmt.Printf("\nRule check: no rule broken%s.\n", note)
+		return
+	}
+	fmt.Printf("\nRule check%s:\n%s\n", note, *verdict)
 }

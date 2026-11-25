@@ -76,6 +76,11 @@ type SearchResponse struct {
 	Results    []SearchResult `json:"results"`
 	TotalFound int            `json:"total_found"`
 	SearchMode string         `json:"search_mode,omitempty"`
+	// Violations is the rule check's verdict (STOMPY-2325): absent when the
+	// server did not run one, JSON null when it ran and found nothing.
+	Violations json.RawMessage `json:"violations"`
+	// ViolationsJudgedBy is "model" or "keywords (<why the model did not judge>)".
+	ViolationsJudgedBy string `json:"violations_judged_by,omitempty"`
 
 	// Raw is the response exactly as the API sent it, for -o json/yaml (the
 	// typed fields above model only what the table renders).
