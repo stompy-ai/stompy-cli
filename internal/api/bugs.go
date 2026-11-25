@@ -35,10 +35,19 @@ type BugReportListResponse struct {
 // NOTE (STOMPY-1462): the server's list endpoint is /bug-reports (not
 // /projects/{project}/bug-reports — that path has never existed) and has
 // no project filter at all, so `project` is accepted for CLI symmetry with
-// other list commands but not sent. It also requires a dev-team X-API-Key
-// header the CLI has no config surface for — see cmd/bug.go's doc comment.
+// other list commands but not sent. The ordinary bearer key reads the
+// caller's own reports (staff: all) since STOMPY-3834.
 func (c *Client) ListBugReports(project, status string, limit, offset int) (*BugReportListResponse, error) {
+	return c.ListBugReportsWithSeverity(project, status, "", limit, offset)
+}
+
+// ListBugReportsWithSeverity composes canonical severity, status and pagination.
+// The unfiltered wrapper preserves existing callers; project is still not sent.
+func (c *Client) ListBugReportsWithSeverity(project, status, severity string, limit, offset int) (*BugReportListResponse, error) {
 	params := url.Values{}
+	if severity != "" {
+		params.Set("severity", severity)
+	}
 	if status != "" {
 		params.Set("status", status)
 	}

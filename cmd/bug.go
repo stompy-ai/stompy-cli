@@ -7,17 +7,13 @@ import (
 	"github.com/stompy-ai/stompy-cli/internal/output"
 )
 
-// bug list/get call the dev-team bug-reports dashboard endpoint, which
-// requires a separate X-API-Key header the CLI has no config surface for
-// (server_hosted's normal Authorization: Bearer flow doesn't satisfy it —
-// see src/api/routes/bug_reports.py::_verify_api_key upstream). Until that's
-// wired up (or the backend accepts the same admin-bearer auth as its other
-// admin routes), these commands will return 401 for every caller — filed as
-// a follow-up to STOMPY-1462 rather than fixed here, since it's a new auth
-// mode, not contract drift.
+// bug list/get read the canonical bug-report store over REST with the CLI's
+// ordinary bearer key (STOMPY-3834): a reporter sees their own reports, staff
+// see all. Proved against the real binary by dementia-production's
+// test_pinned_cli_reads_own_and_refuses_other_without_new_store.
 var bugCmd = &cobra.Command{
 	Use:   "bug",
-	Short: "View bug reports (dev team only — requires X-API-Key, not yet supported by this CLI)",
+	Short: "View your bug reports (staff see all)",
 }
 
 var bugListCmd = &cobra.Command{
@@ -30,10 +26,11 @@ var bugListCmd = &cobra.Command{
 		}
 
 		status, _ := cmd.Flags().GetString("status")
+		severity, _ := cmd.Flags().GetString("severity")
 		limit, _ := cmd.Flags().GetInt("limit")
 		offset, _ := cmd.Flags().GetInt("offset")
 
-		resp, err := apiClient.ListBugReports(project, status, limit, offset)
+		resp, err := apiClient.ListBugReportsWithSeverity(project, status, severity, limit, offset)
 		if err != nil {
 			return err
 		}
@@ -107,7 +104,8 @@ var bugGetCmd = &cobra.Command{
 }
 
 func init() {
-	bugListCmd.Flags().String("status", "", "Filter by status (new, triaged, in_progress, resolved, closed, duplicate)")
+	bugListCmd.Flags().String("status", "", "Filter by status (triage, confirmed, in_progress, resolved, wont_fix, parked)")
+	bugListCmd.Flags().String("severity", "", "Filter by severity (critical, high, medium, low)")
 	bugListCmd.Flags().Int("limit", 0, "Limit results")
 	bugListCmd.Flags().Int("offset", 0, "Offset for pagination")
 
