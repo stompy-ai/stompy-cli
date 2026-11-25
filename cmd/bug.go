@@ -26,10 +26,11 @@ var bugListCmd = &cobra.Command{
 		}
 
 		status, _ := cmd.Flags().GetString("status")
+		severity, _ := cmd.Flags().GetString("severity")
 		limit, _ := cmd.Flags().GetInt("limit")
 		offset, _ := cmd.Flags().GetInt("offset")
 
-		resp, err := apiClient.ListBugReports(project, status, limit, offset)
+		resp, err := apiClient.ListBugReportsWithSeverity(project, status, severity, limit, offset)
 		if err != nil {
 			return err
 		}
@@ -103,7 +104,8 @@ var bugGetCmd = &cobra.Command{
 }
 
 func init() {
-	bugListCmd.Flags().String("status", "", "Filter by status (new, triaged, in_progress, resolved, closed, duplicate)")
+	bugListCmd.Flags().String("status", "", "Filter by status (triage, confirmed, in_progress, resolved, wont_fix, parked)")
+	bugListCmd.Flags().String("severity", "", "Filter by severity (critical, high, medium, low)")
 	bugListCmd.Flags().Int("limit", 0, "Limit results")
 	bugListCmd.Flags().Int("offset", 0, "Offset for pagination")
 

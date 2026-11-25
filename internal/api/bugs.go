@@ -38,7 +38,16 @@ type BugReportListResponse struct {
 // other list commands but not sent. The ordinary bearer key reads the
 // caller's own reports (staff: all) since STOMPY-3834.
 func (c *Client) ListBugReports(project, status string, limit, offset int) (*BugReportListResponse, error) {
+	return c.ListBugReportsWithSeverity(project, status, "", limit, offset)
+}
+
+// ListBugReportsWithSeverity composes canonical severity, status and pagination.
+// The unfiltered wrapper preserves existing callers; project is still not sent.
+func (c *Client) ListBugReportsWithSeverity(project, status, severity string, limit, offset int) (*BugReportListResponse, error) {
 	params := url.Values{}
+	if severity != "" {
+		params.Set("severity", severity)
+	}
 	if status != "" {
 		params.Set("status", status)
 	}
