@@ -42,6 +42,20 @@ func TestBug3931_ReporterAndOccurrences(t *testing.T) {
 					assertBug3931HumanField(t, out, "Occurrences", fmt.Sprint(count))
 					return
 				}
+				if format == "yaml" {
+					var raw map[string]any
+					if err := yaml.Unmarshal([]byte(out), &raw); err != nil {
+						t.Fatal(err)
+					}
+					if actor == "owned" {
+						if value, ok := raw["Reporter"].(int); !ok || value != 2147483647 {
+							t.Fatalf("YAML reporter must stay an integer, got %T %v", raw["Reporter"], raw["Reporter"])
+						}
+					}
+					if value, ok := raw["Occurrences"].(int); !ok || value != count {
+						t.Fatalf("YAML occurrences must stay an integer: %#v", raw)
+					}
+				}
 				got := decodeBug3867(t, format, out)
 				if !reflect.DeepEqual(got["Reporter"], wantReporter) || got["Occurrences"] != float64(count) {
 					t.Fatalf("reporter/count changed type or value: %#v", got)

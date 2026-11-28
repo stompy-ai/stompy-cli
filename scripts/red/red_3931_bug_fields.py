@@ -36,5 +36,7 @@ if __name__ == "__main__":
         ("hide_unknown_human_observations", detail,
          'text := "(not recorded)"', 'text := ""',
          {case(v + "-table") for v in ("absent", "null")}),
+        ("render_reporter_as_yaml_float", detail,
+         'return int64(number)', 'return number', {case("owned-yaml")}),
     ]
     driver.run_reverts()
