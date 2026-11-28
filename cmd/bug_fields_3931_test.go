@@ -7,13 +7,15 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jedib0t/go-pretty/v6/text"
 	"gopkg.in/yaml.v3"
 )
 
 func assertBug3931HumanField(t *testing.T, out, label, value string) {
 	t.Helper()
-	for _, line := range strings.Split(out, "\n") {
-		if strings.Contains(line, label+":") && strings.Contains(line, value) {
+	for _, line := range strings.Split(text.StripEscape(out), "\n") {
+		key, got, found := strings.Cut(line, ":")
+		if found && strings.TrimSpace(key) == label && strings.TrimSpace(got) == value {
 			return
 		}
 	}

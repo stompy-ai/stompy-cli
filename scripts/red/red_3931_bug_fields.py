@@ -1,5 +1,6 @@
 """Canonical reader fields stay typed and visible; old reader controls stay green."""
 
+import os
 from pathlib import Path
 
 import red_3849_sessions as driver
@@ -42,4 +43,18 @@ if __name__ == "__main__":
         ("render_reporter_as_yaml_float", detail,
          'return int64(number)', 'return number', {case("owned-yaml")}),
     ]
-    driver.run_reverts()
+    # ANSI label codes contain "3"; they must never satisfy the anonymous count.
+    original = {key: os.environ.get(key) for key in ("FORCE_COLOR", "NO_COLOR", "TERM")}
+    try:
+        for mode in ("plain", "ansi"):
+            os.environ.update(FORCE_COLOR="1" if mode == "ansi" else "0",
+                              NO_COLOR="0" if mode == "ansi" else "1",
+                              TERM="xterm-256color" if mode == "ansi" else "dumb")
+            print(f"COLOR MODE: {mode}", flush=True)
+            driver.run_reverts()
+    finally:
+        for key, value in original.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
