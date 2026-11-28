@@ -1,0 +1,60 @@
+"""Canonical reader fields stay typed and visible; old reader controls stay green."""
+
+import os
+from pathlib import Path
+
+import red_3849_sessions as driver
+
+
+def case(label: str) -> str:
+    return "test_real_command_tree[" + label + "]"
+
+
+if __name__ == "__main__":
+    engine = driver.engine
+    engine.ROOT = Path(__file__).resolve().parents[2]
+    engine.TEST = "scripts/red/test_bug_fields_3931.py"
+    engine.PREFIX = "scripts.red.test_bug_fields_3931::"
+    engine.CONTROLS = {engine.PREFIX + case(label) for label in (
+        "refusal", "context_control", "quarantine_json", "quarantine_table",
+        "no_project_list", "no_project_get")}
+    present = {case(a + "-" + f) for a in ("owned", "anonymous")
+               for f in ("json", "yaml", "table")}
+    listed = {case("list-" + f) for f in ("json", "yaml", "table")}
+    detail = "cmd/bug_detail.go"
+    engine.REVERTS = [
+        ("discard_reporter_at_decode", "internal/api/bugs.go",
+         '`json:"reporter_user_id"`', '`json:"red_unused_reporter"`', present),
+        ("discard_occurrences_at_decode", "internal/api/bugs.go",
+         '`json:"occurrences"`', '`json:"red_unused_occurrences"`', present),
+        ("discard_reporter_at_render", detail,
+         '"Reporter": bugReporterValue(report.ReporterUserID)', '"Reporter": nil', present),
+        ("discard_occurrences_at_render", detail,
+         '"Occurrences": occurrences',
+         '"Occurrences": func(value any) any { return nil }(occurrences)', present),
+        ("discard_project_on_list", "cmd/bug.go", 'b.ProjectName,', '"",', listed),
+        ("discard_updated_on_list", "cmd/bug.go", 'b.UpdatedAt,', '"",', listed),
+        ("omit_unknown_machine_observations", detail,
+         'obj[key] = value', 'if value != nil { obj[key] = value }',
+         {case(v + "-" + f) for v in ("absent", "null") for f in ("json", "yaml")}),
+        ("hide_unknown_human_observations", detail,
+         'text := "(not recorded)"', 'text := ""',
+         {case(v + "-table") for v in ("absent", "null")}),
+        ("render_reporter_as_yaml_float", detail,
+         'return int64(number)', 'return number', {case("owned-yaml")}),
+    ]
+    # ANSI label codes contain "3"; they must never satisfy the anonymous count.
+    original = {key: os.environ.get(key) for key in ("FORCE_COLOR", "NO_COLOR", "TERM")}
+    try:
+        for mode in ("plain", "ansi"):
+            os.environ.update(FORCE_COLOR="1" if mode == "ansi" else "0",
+                              NO_COLOR="0" if mode == "ansi" else "1",
+                              TERM="xterm-256color" if mode == "ansi" else "dumb")
+            print(f"COLOR MODE: {mode}", flush=True)
+            driver.run_reverts()
+    finally:
+        for key, value in original.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
