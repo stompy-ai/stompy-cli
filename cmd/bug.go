@@ -35,7 +35,7 @@ var bugListCmd = &cobra.Command{
 		}
 
 		f := getFormatter()
-		headers := []string{"ID", "TITLE", "STATUS", "SEVERITY", "CREATED"}
+		headers := []string{"ID", "TITLE", "STATUS", "SEVERITY", "CREATED", "PROJECT", "UPDATED"}
 		var rows [][]string
 		for _, b := range resp.Reports {
 			statusStr := b.Status
@@ -50,6 +50,8 @@ var bugListCmd = &cobra.Command{
 				statusStr,
 				severityStr,
 				b.CreatedAt,
+				b.ProjectName,
+				b.UpdatedAt,
 			})
 		}
 
