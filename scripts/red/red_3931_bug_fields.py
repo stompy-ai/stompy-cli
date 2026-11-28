@@ -5,12 +5,15 @@ from pathlib import Path
 import red_3849_sessions as driver
 
 
+def case(label: str) -> str:
+    return "test_real_command_tree[" + label + "]"
+
+
 if __name__ == "__main__":
     engine = driver.engine
     engine.ROOT = Path(__file__).resolve().parents[2]
     engine.TEST = "scripts/red/test_bug_fields_3931.py"
     engine.PREFIX = "scripts.red.test_bug_fields_3931::"
-    case = lambda label: "test_real_command_tree[" + label + "]"
     engine.CONTROLS = {engine.PREFIX + case(label) for label in (
         "refusal", "context_control", "quarantine_json", "quarantine_table",
         "no_project_list", "no_project_get")}

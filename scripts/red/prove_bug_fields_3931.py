@@ -4,6 +4,8 @@
 All writes are the backend's disposable MAIN/routed fixtures; auth alone is synthetic.
 """
 
+from __future__ import annotations
+
 import argparse
 import asyncio
 import json
@@ -11,6 +13,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+from typing import Any, Generator
 from xml.etree import ElementTree as ET
 
 import pytest
@@ -21,7 +24,7 @@ PRODUCER = "test_submit_has_one_main_target_with_or_without_project"
 MODULE = "tests/integration/test_3834_cutover_doors.py"
 
 
-async def readback(case, home, binary, nodeid):
+async def readback(case: Any, home: Path, binary: Path, nodeid: str) -> None:
     from fastapi.testclient import TestClient
     from src.contextvars import current_user_tier
     from tests.conftest import parse_tool_response
@@ -59,15 +62,15 @@ async def readback(case, home, binary, nodeid):
         command = [str(binary), "--api-url", url, "--api-key", "synthetic"]
         env = {"PATH": "/usr/bin:/bin", "HOME": str(home), "NO_COLOR": "1"}
 
-        def call(*args, output="json"):
+        def call(*args: str, output: str = "json") -> subprocess.CompletedProcess[str]:
             return subprocess.run(command + ["-o", output, "bug", *args],
                                   cwd=home, env=env, capture_output=True, text=True, timeout=20)
 
-        def decoded(result, output):
+        def decoded(result: subprocess.CompletedProcess[str], output: str) -> Any:
             assert result.returncode == 0, result.stdout + result.stderr
             return json.loads(result.stdout) if output == "json" else yaml.safe_load(result.stdout)
 
-        def observation(row, reporter, occurrences):
+        def observation(row: dict[str, Any], reporter: int | str, occurrences: int) -> None:
             for output in ("json", "yaml", "table"):
                 result = call("get", row["id"], output=output)
                 assert result.returncode == 0, result.stdout + result.stderr
@@ -132,7 +135,7 @@ async def readback(case, home, binary, nodeid):
             assert counts(case) == (3, 0, 0, 0)
 
 
-def main():
+def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--binary", type=Path, required=True)
     parser.add_argument("--out", type=Path, required=True)
@@ -151,13 +154,13 @@ def main():
     os.environ["STOMPY_CLI_BIN"] = str(binary)
 
     class Probe:
-        def pytest_collection_modifyitems(self, items):
+        def pytest_collection_modifyitems(self, items: list[Any]) -> None:
             for item in items:
                 if "tmp_path" not in item.fixturenames:
                     item.fixturenames.append("tmp_path")
 
         @pytest.hookimpl(wrapper=True)
-        def pytest_runtest_call(self, item):
+        def pytest_runtest_call(self, item: Any) -> Generator[None, Any, Any]:
             result = yield
             if item.originalname == PRODUCER:
                 asyncio.run(readback(item.funcargs["doors"], item.funcargs["tmp_path"], binary, item.nodeid))

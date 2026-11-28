@@ -1,5 +1,7 @@
 """Drive real Cobra commands; pytest RED names each semantic projection loss."""
 
+from __future__ import annotations
+
 import json
 import re
 import subprocess
@@ -22,7 +24,7 @@ CASES.update(refusal="TestBug3931_RefusalControl",
 
 
 @pytest.fixture(scope="session")
-def binary(tmp_path_factory):
+def binary(tmp_path_factory: pytest.TempPathFactory) -> Path:
     binary = tmp_path_factory.mktemp("fields3931") / "cmd.test"
     subprocess.run(["go", "test", "-c", "-o", str(binary), "./cmd"],
                    cwd=ROOT, check=True, timeout=120)
@@ -30,7 +32,7 @@ def binary(tmp_path_factory):
 
 
 @pytest.mark.parametrize("case", CASES)
-def test_real_command_tree(binary, case):
+def test_real_command_tree(binary: Path, case: str) -> None:
     name = CASES[case]
     result = subprocess.run([
         "go", "tool", "test2json", "-p", "cmd", str(binary), "-test.v", "-test.run",
