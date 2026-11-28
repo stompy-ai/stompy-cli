@@ -60,6 +60,8 @@ type FileUploadResponse struct {
 	ContextID        *int         `json:"context_id,omitempty"`
 	AIDescription    *string      `json:"ai_description,omitempty"`
 	Message          string       `json:"message,omitempty"`
+	IsDuplicate      bool         `json:"is_duplicate,omitempty"`     // same bytes already stored (STOMPY-3125)
+	ReplacedFileID   *int         `json:"replaced_file_id,omitempty"` // the same-name file this replaces
 }
 
 // ListFiles fetches files for a project with optional search.
